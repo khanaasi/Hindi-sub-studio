@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Watch Online | Anime Sub Studio</title>
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .detail-container { max-width: 800px; margin: 30px auto; padding: 25px; background: var(--card-bg); border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; align-items: center; text-align: left; }
+        .detail-img { width: 280px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); object-fit: cover; margin-bottom: 25px; border: 2px solid var(--primary); }
+        .detail-info { width: 100%; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px; margin-bottom: 30px; border: 1px solid rgba(255,255,255,0.05); }
+        .info-row { margin-bottom: 15px; font-size: 16px; color: #ddd; }
+        .info-row strong { color: var(--primary); font-size: 18px; margin-right: 8px;}
+        .story-box { background: #111; padding: 15px; border-radius: 8px; margin-top: 10px; color: #bbb; line-height: 1.6; font-size: 15px; }
+        .episodes-box { width: 100%; }
+        .episodes-box h3 { color: white; margin-bottom: 20px; text-align: center; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .episodes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
+        .ep-btn { background: rgba(255,69,0,0.1); color: white; padding: 12px; text-align: center; border-radius: 10px; font-weight: 600; cursor: pointer; transition: 0.3s; border: 1px solid rgba(255,69,0,0.3); font-size: 15px; }
+        .ep-btn:hover { background: var(--primary); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(255,69,0,0.4); }
+        .ep-btn.loading { opacity: 0.6; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="logo">Anime Sub <span>Studio</span></a>
+    </header>
+
+    <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Home</a>
+
+    <div id="detailBox">
+        <div class="loader-container">
+            <div class="loader"></div>
+            <h3 style="color:var(--primary);">Loading Details...</h3>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+        const app = initializeApp({
+            apiKey: "AIzaSyAjetcwFJR-5b8h-h5AM2j1O2xSk5srh3M",
+            authDomain: "anime-sub-studio.firebaseapp.com",
+            projectId: "anime-sub-studio"
+        });
+        const db = getFirestore(app);
+        const urlParams = new URLSearchParams(window.location.search);
+        const animeId = urlParams.get('id');
+
+        window.processEpisodeClick = async function(btnElement) {
+            if(btnElement.classList.contains("loading")) return;
+            const originalText = btnElement.innerHTML;
+            
+            // SECURITY: Decode Base64 and Reverse string back to normal
+            const secureData = btnElement.getAttribute("data-secure");
+            const targetLink = atob(secureData).split('').reverse().join('');
+            
+            btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Wait...';
+            btnElement.classList.add("loading");
+
+            try {
+                const settingsSnap = await getDoc(doc(db, "settings", "general"));
+                const data = settingsSnap.exists() ? settingsSnap.data() : null;
+                const shorteners = data ? (data.shorteners || []) : [];
+
+                if (shorteners.length === 0) {
+                    window.open(targetLink, '_blank');
+                    resetBtn(btnElement, originalText);
+                    return;
+                }
+
+                const apiObj = shorteners[0];
+                const apiUrl = `${apiObj.url}?api=${apiObj.key}&url=${encodeURIComponent(targetLink)}&format=text`;
+
+                const response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`);
+                const shortLink = await response.text();
+
+                if (shortLink && shortLink.startsWith("http")) {
+                    const form = document.createElement('form');
+                    form.method = "GET"; form.action = shortLink.trim(); form.target = "_blank";
+                    document.body.appendChild(form); form.submit();
+                } else {
+                    alert("Link Generation Failed.");
+                }
+            } catch (error) {
+                alert("Server Connection Error.");
+            } finally {
+                resetBtn(btnElement, originalText);
+            }
+        };
+
+        function resetBtn(btn, text) { btn.innerHTML = text; btn.classList.remove("loading"); }
+
+        async function loadDetail() {
+            if (!animeId) return;
+            const docSnap = await getDoc(doc(db, "anime", animeId));
+            
+            if (docSnap.exists()) {
+                const a = docSnap.data();
+                const episodes = a.episodes || [];
+                
+                // Sorting alphabetically so "01-05" doesn't break
+                episodes.sort((x, y) => String(x.ep).localeCompare(String(y.ep), undefined, {numeric: true}));
+
+                let episodesHTML = "";
+                if(episodes.length === 0) {
+                    episodesHTML = "<p style='color:#aaa; width:100%; text-align:center;'>No episodes uploaded yet.</p>";
+                } else {
+                    episodes.forEach((ep) => {
+                        // SECURITY: Reverse string and then Base64 Encode (Bypass proof)
+                        const reversedLink = ep.link.split('').reverse().join('');
+                        const secureCode = btoa(reversedLink);
+                        episodesHTML += `<button class="ep-btn" data-secure="${secureCode}">Episode ${ep.ep}</button>`;
+                    });
+                }
+
+                document.getElementById("detailBox").innerHTML = `
+                    <div class="detail-container">
+                        <!-- Top Pe Image -->
+                        <img src="${a.image}" class="detail-img">
+                        
+                        <!-- Details Niche -->
+                        <div class="detail-info">
+                            <div class="info-row"><strong>Name :</strong> ${a.name}</div>
+                            <div class="info-row"><strong>Released date :</strong> ${a.year || "Unknown"}</div>
+                            <div class="info-row"><strong>Genre :</strong> ${a.genre || "General"}</div>
+                            <div class="info-row"><strong>Story :</strong> <div class="story-box">${a.description || "Story not available."}</div></div>
+                        </div>
+                        
+                        <!-- Just Niche Episodes -->
+                        <div class="episodes-box">
+                            <h3>Episodes / Batch List</h3>
+                            <div class="episodes-grid">${episodesHTML}</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                document.getElementById("detailBox").innerHTML = "<h2 style='text-align:center;'>Content Not Found!</h2>";
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.ep-btn');
+            if (btn && btn.hasAttribute('data-secure')) {
+                processEpisodeClick(btn);
+            }
+        });
+
+        loadDetail();
+    </script>
+</body>
+</html>
