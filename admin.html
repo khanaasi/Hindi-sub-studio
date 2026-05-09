@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel - Anime Sub Studio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
+    <style>
+        :root { --bg-color: #0f0f13; --box-bg: #1c1c24; --primary: #ff4500; --text-color: #ffffff; --border: #333; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; }
+        .admin-container { max-width: 800px; margin: 0 auto; }
+        .box { background-color: var(--box-bg); padding: 25px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.05); }
+        .box h3 { margin-top: 0; color: var(--primary); border-bottom: 2px solid var(--border); padding-bottom: 10px;}
+        input, select, textarea { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--border); background: #121216; color: white; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background-color: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .ep-list { margin-top: 15px; max-height: 220px; overflow-y: auto; }
+        .ep-item { display: flex; justify-content: space-between; background: #1e1e1e; padding: 10px; margin-bottom: 8px; border-left: 3px solid var(--primary); }
+    </style>
+</head>
+<body>
+<div class="admin-container">
+    <h2 style="text-align:center; color: var(--primary);">🔥 Anime Sub Studio Admin</h2>
+
+    <div class="box" id="loginBox">
+        <h3>🔐 Admin Login</h3>
+        <input type="email" id="adminEmail" placeholder="Admin Email">
+        <input type="password" id="adminPass" placeholder="Password">
+        <button id="loginBtn">🚀 Login</button>
+    </div>
+
+    <div id="adminPanel" style="display:none">
+        <button id="logoutBtn" style="background: #333; margin-bottom: 15px; width: auto; padding: 8px 20px;">🚪 Logout</button>
+
+        <div class="box">
+            <h3>🎬 Add New Content</h3>
+            <input id="newName" placeholder="Name (e.g., Solo Leveling)">
+            <div class="grid-2">
+                <input id="newYear" type="text" placeholder="Released Date (e.g., 2024)">
+                <input id="newGenre" placeholder="Genre (e.g., Action, Romance)">
+            </div>
+            <!-- CATEGORY / TYPE (Direct Type TextBox) -->
+            <input id="newType" type="text" placeholder="Type (e.g., K-Drama Hindi Sub, Cartoon, Movies)">
+            
+            <textarea id="newDesc" rows="4" placeholder="Story / Synopsis"></textarea>
+            <button id="uploadImgBtn" type="button" style="background:#1e5f8e; margin-bottom:10px;">🖼️ Upload Image</button>
+            <img id="imgPreview" style="max-width: 140px; display:none; margin: 0 auto 10px; border-radius: 8px;">
+            <button id="addAnimeBtn">➕ Save Content</button>
+        </div>
+
+        <div class="box">
+            <h3>📺 Episode Management</h3>
+            <select id="animeSelect"><option value="">-- Select Content --</option></select>
+            <div class="grid-2">
+                <!-- EPISODE NUMBER AS TEXT -->
+                <input id="epNum" type="text" placeholder="Episode No. (e.g. 01, 01-05, Batch 1)">
+                <input id="epLink" placeholder="Original Link (Drive/Mega)">
+            </div>
+            <button id="addEpBtn">➕ Add Episode</button>
+            <div id="episodesContainer" class="ep-list"></div>
+        </div>
+
+        <div class="box">
+            <h3>🔗 Shortener Settings</h3>
+            <input id="shortUrl" placeholder="Site URL (e.g. adrinolinks.in/api)">
+            <input id="shortKey" placeholder="Your API Token">
+            <button id="saveShortBtn">💾 Save API</button>
+        </div>
+        
+        <div class="box">
+            <h3>🗑️ Delete Content</h3>
+            <select id="deleteSelect"><option value="">Select to Delete</option></select>
+            <button id="deleteAnimeBtn" style="background: #b71c1c;">🔥 Delete Permanently</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDoc, getDocs, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, setDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+
+    const app = initializeApp({
+        apiKey: "AIzaSyAjetcwFJR-5b8h-h5AM2j1O2xSk5srh3M",
+        authDomain: "anime-sub-studio.firebaseapp.com",
+        projectId: "anime-sub-studio"
+    });
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    let uploadedImage = "";
+    let selectedAnimeId = "";
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) { document.getElementById("adminPanel").style.display = "block"; document.getElementById("loginBox").style.display = "none"; loadList(); loadSettings(); } 
+        else { document.getElementById("adminPanel").style.display = "none"; document.getElementById("loginBox").style.display = "block"; }
+    });
+
+    document.getElementById("loginBtn").onclick = async () => {
+        try { await signInWithEmailAndPassword(auth, document.getElementById("adminEmail").value, document.getElementById("adminPass").value); } 
+        catch (e) { alert("Login failed! Check ID/Password."); }
+    };
+    document.getElementById("logoutBtn").onclick = () => signOut(auth);
+
+    async function loadSettings() {
+        const snap = await getDoc(doc(db, "settings", "general"));
+        if(snap.exists() && snap.data().shorteners && snap.data().shorteners[0]) {
+            document.getElementById("shortUrl").value = snap.data().shorteners[0].url;
+            document.getElementById("shortKey").value = snap.data().shorteners[0].key;
+        }
+    }
+
+    document.getElementById("saveShortBtn").onclick = async () => {
+        let url = document.getElementById("shortUrl").value.trim();
+        let key = document.getElementById("shortKey").value.trim();
+        if(url && !url.endsWith("/api")) url += "/api";
+        await setDoc(doc(db, "settings", "general"), { shorteners: [{url, key}] }, {merge: true});
+        alert("API Saved!");
+    };
+
+    document.getElementById("uploadImgBtn").onclick = () => {
+        cloudinary.createUploadWidget({ cloudName: "dccbzyjtr", uploadPreset: "asi_anime_upload", multiple: false }, (err, res) => {
+            if (!err && res.event === "success") {
+                uploadedImage = res.info.secure_url;
+                document.getElementById("imgPreview").src = uploadedImage;
+                document.getElementById("imgPreview").style.display = "block";
+            }
+        }).open();
+    };
+
+    document.getElementById("addAnimeBtn").onclick = async () => {
+        const name = document.getElementById("newName").value;
+        const type = document.getElementById("newType").value.trim() || "Anime"; 
+        if(!name || !uploadedImage) return alert("Name & Image required!");
+        
+        await addDoc(collection(db, "anime"), {
+            name: name, year: document.getElementById("newYear").value, genre: document.getElementById("newGenre").value,
+            type: type, description: document.getElementById("newDesc").value, image: uploadedImage,
+            episodes: [], updatedAt: Date.now()
+        });
+        alert("Content Saved!"); loadList();
+    };
+
+    async function loadList() {
+        const snap = await getDocs(collection(db, "anime"));
+        const select = document.getElementById("animeSelect");
+        const delSelect = document.getElementById("deleteSelect");
+        select.innerHTML = '<option value="">-- Select Content --</option>';
+        delSelect.innerHTML = '<option value="">-- Select --</option>';
+        snap.forEach(d => {
+            const opt = `<option value="${d.id}">${d.data().name} (${d.data().type})</option>`;
+            select.innerHTML += opt; delSelect.innerHTML += opt;
+        });
+    }
+
+    document.getElementById("animeSelect").onchange = (e) => { selectedAnimeId = e.target.value; fetchEpisodes(); };
+
+    async function fetchEpisodes() {
+        if(!selectedAnimeId) return;
+        const snap = await getDoc(doc(db, "anime", selectedAnimeId));
+        const eps = snap.data().episodes || [];
+        document.getElementById("episodesContainer").innerHTML = eps.map(ep => `
+            <div class="ep-item">
+                <span>Ep: ${ep.ep}</span>
+                <button onclick="deleteEp('${ep.ep}', '${btoa(ep.link)}')" style="background:red; width:auto; padding:5px 15px;">Delete</button>
+            </div>
+        `).join('');
+    }
+
+    window.deleteEp = async (epNum, secureLink) => {
+        await updateDoc(doc(db, "anime", selectedAnimeId), { episodes: arrayRemove({ep: epNum, link: atob(secureLink)}) });
+        fetchEpisodes();
+    };
+
+    document.getElementById("addEpBtn").onclick = async () => {
+        if(!selectedAnimeId) return alert("Select anime first!");
+        const epNum = document.getElementById("epNum").value.trim();
+        const link = document.getElementById("epLink").value.trim();
+        if(!epNum || !link) return alert("Enter number & link!");
+        
+        await updateDoc(doc(db, "anime", selectedAnimeId), {
+            episodes: arrayUnion({ ep: epNum, link: link }), updatedAt: Date.now()
+        });
+        document.getElementById("epLink").value = "";
+        alert("Episode Added!"); fetchEpisodes();
+    };
+
+    document.getElementById("deleteAnimeBtn").onclick = async () => {
+        const id = document.getElementById("deleteSelect").value;
+        if(id && confirm("Delete completely?")) {
+            await deleteDoc(doc(db, "anime", id));
+            alert("Deleted!"); loadList();
+        }
+    };
+</script>
+</body>
+</html>
