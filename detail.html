@@ -10,18 +10,22 @@
     <style>
         .detail-container { max-width: 800px; margin: 30px auto; padding: 25px; background: var(--card-bg); border-radius: 20px; display: flex; flex-direction: column; align-items: center; text-align: left; }
         .detail-img { width: 280px; border-radius: 15px; margin-bottom: 25px; border: 2px solid var(--primary); }
-        .detail-info { width: 100%; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px; margin-bottom: 30px; }
+        .detail-info { width: 100%; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px; margin-bottom: 30px; border: 1px solid rgba(255,255,255,0.05);}
         .info-row { margin-bottom: 15px; font-size: 16px; color: #ddd; }
         .info-row strong { color: var(--primary); margin-right: 8px;}
-        .story-box { background: #111; padding: 15px; border-radius: 8px; margin-top: 10px; color: #bbb; font-size: 15px; }
+        .story-box { background: #111; padding: 15px; border-radius: 8px; margin-top: 10px; color: #bbb; font-size: 15px; line-height:1.6;}
+        .episodes-box { width: 100%; }
+        .episodes-box h3 { color: white; margin-bottom: 20px; text-align: center; border-bottom: 1px solid #333; padding-bottom: 10px; }
         .episodes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
-        .ep-btn { background: rgba(255,69,0,0.1); color: white; padding: 12px; text-align: center; border-radius: 10px; cursor: pointer; border: 1px solid rgba(255,69,0,0.3); }
-        .ep-btn:hover { background: var(--primary); }
-        
+        .ep-btn { background: rgba(255,69,0,0.1); color: white; padding: 12px; text-align: center; border-radius: 10px; cursor: pointer; border: 1px solid rgba(255,69,0,0.3); font-weight:600; transition:0.3s; }
+        .ep-btn:hover { background: var(--primary); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(255,69,0,0.4); }
+        .ep-btn.loading { opacity: 0.6; pointer-events: none; }
+
         /* Premium Box Styles */
-        .premium-box { background: linear-gradient(135deg, #1f1c0d, #3b3112); border: 1px solid #d4af37; padding: 15px; border-radius: 10px; width: 100%; text-align: center; margin-bottom: 20px; }
-        .premium-input { padding: 8px; border-radius: 5px; border: 1px solid #d4af37; background: #000; color: white; margin-right: 5px; }
-        .premium-btn { background: #d4af37; color: #000; padding: 8px 15px; font-weight: bold; border-radius: 5px; cursor: pointer; border: none; }
+        .premium-box { background: linear-gradient(135deg, #1f1c0d, #3b3112); border: 1px solid #d4af37; padding: 15px; border-radius: 10px; width: 100%; text-align: center; margin-bottom: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .premium-input { padding: 10px; border-radius: 5px; border: 1px solid #d4af37; background: #000; color: white; margin: 5px; outline:none;}
+        .premium-btn { background: #d4af37; color: #000; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; border: none; transition:0.3s;}
+        .premium-btn:hover { background: #fff; transform: scale(1.05); }
     </style>
 </head>
 <body>
@@ -30,10 +34,27 @@
         <a href="index.html" class="logo">Anime Sub <span>Studio</span></a>
     </header>
 
-    <a href="index.html" class="back-btn" style="margin:20px;"><i class="fas fa-arrow-left"></i> Back to Home</a>
+    <a href="index.html" class="back-btn" style="display:inline-block; margin:20px; color:white; background:#222; padding:8px 15px; border-radius:10px; text-decoration:none;"><i class="fas fa-arrow-left"></i> Back to Home</a>
+
+    <!-- Premium Login / Logout UI (Hidden by default, shown after load) -->
+    <div id="premiumSection" style="max-width:400px; margin: 0 auto 20px; display:none;">
+        <div id="premiumLoginForm" class="premium-box">
+            <h3 style="color:#d4af37;">🔐 Premium Login</h3>
+            <input type="email" id="premEmail" class="premium-input" placeholder="Your Gmail">
+            <input type="password" id="premPass" class="premium-input" placeholder="Password">
+            <button id="premLoginBtn" class="premium-btn">Login</button>
+        </div>
+        <div id="premiumLoggedIn" style="display:none; text-align:center;">
+            <p style="color:#d4af37;">✅ Premium Active</p>
+            <button onclick="logoutPremium()" class="premium-btn" style="background:#c0392b; color:white;">Logout</button>
+        </div>
+    </div>
 
     <div id="detailBox">
-        <div class="loader-container"><div class="loader"></div><h3 style="color:var(--primary);">Loading Details...</h3></div>
+        <div class="loader-container" style="text-align:center; margin-top:50px;">
+            <div class="loader" style="border: 4px solid #333; border-top: 4px solid #ff4500; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 10px;"></div>
+            <h3 style="color:var(--primary);">Loading Details...</h3>
+        </div>
     </div>
 
     <script type="module">
@@ -51,11 +72,24 @@
 
         let isPremium = false;
 
-        // Premium Login System (1 Device Lock)
+        // Cookie helpers
+        function setCookie(name, value, hours) {
+            const d = new Date();
+            d.setTime(d.getTime() + (hours * 60 * 60 * 1000));
+            document.cookie = name + "=" + value + ";expires=" + d.toUTCString() + ";path=/";
+        }
+        function getCookie(name) {
+            const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+            if (match) return match[2];
+        }
+
+        // Premium Login System (1 Device Lock + 28 Days)
         window.loginPremium = async () => {
             const email = document.getElementById("premEmail").value.trim().toLowerCase();
             const pass = document.getElementById("premPass").value.trim();
             if(!email || !pass) return alert("Email & Password required");
+            
+            document.getElementById("premLoginBtn").innerText = "Wait...";
             
             try {
                 const snap = await getDoc(doc(db, "premium_users", email));
@@ -69,24 +103,30 @@
                         localStorage.setItem("myDeviceId", myDevice);
                     }
 
-                    // Device locking system
                     if(data.deviceId && data.deviceId !== myDevice) {
                         return alert("❌ Account is already logged in on another device! Contact Admin.");
                     }
                     
                     await updateDoc(doc(db, "premium_users", email), { deviceId: myDevice });
                     localStorage.setItem("premiumUserEmail", email);
-                    alert("💎 Premium Login Successful!");
+                    alert("💎 Premium Login Successful! Enjoy Direct Links.");
                     location.reload();
                 } else {
                     alert("❌ Invalid Email or Password!");
+                    document.getElementById("premLoginBtn").innerText = "Login";
                 }
-            } catch(e) { alert("Error connecting to server."); }
+            } catch(e) { 
+                alert("Error connecting to server."); 
+                document.getElementById("premLoginBtn").innerText = "Login";
+            }
         };
 
-        window.logoutPremium = () => { localStorage.removeItem("premiumUserEmail"); location.reload(); };
+        window.logoutPremium = () => { 
+            localStorage.removeItem("premiumUserEmail"); 
+            location.reload(); 
+        };
 
-        // Check if currently Premium
+        // Check if user is currently Premium
         async function checkPremiumStatus() {
             const email = localStorage.getItem("premiumUserEmail");
             if(email) {
@@ -97,47 +137,57 @@
                     localStorage.removeItem("premiumUserEmail");
                 }
             }
+            // Show Premium UI after status known
+            const section = document.getElementById("premiumSection");
+            if (section) {
+                section.style.display = "block";
+                if (isPremium) {
+                    document.getElementById("premiumLoginForm").style.display = "none";
+                    document.getElementById("premiumLoggedIn").style.display = "block";
+                } else {
+                    document.getElementById("premiumLoginForm").style.display = "block";
+                    document.getElementById("premiumLoggedIn").style.display = "none";
+                }
+            }
         }
 
-        // AAPKA SCRIPT: 24 Hour Cookie Logic
-        function setCookie(name, value, hours) {
-            const d = new Date();
-            d.setTime(d.getTime() + (hours * 60 * 60 * 1000));
-            document.cookie = name + "=" + value + ";expires=" + d.toUTCString() + ";path=/";
-        }
-        function getCookie(name) {
-            const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-            if (match) return match[2];
-        }
-
-        // Episode Click Handling
+        // Episode Click Handler (Multi-Shortener Random + Cookie Bypass + Premium)
         window.processEpisodeClick = async function(btnElement, epNum) {
-            const targetLink = atob(btnElement.getAttribute("data-secure"));
+            // Secure Decode: reverse + base64 -> original link
+            let targetLink;
+            try {
+                const secureData = btnElement.getAttribute("data-secure");
+                const reversed = atob(secureData);
+                targetLink = reversed.split('').reverse().join('');
+            } catch(e) {
+                alert("Invalid link data.");
+                return;
+            }
             
-            // 1. Premium users skip everything
+            // 1. Premium users skip everything (Direct original link)
             if(isPremium) {
                 window.open(targetLink, '_blank');
                 return;
             }
 
-            // 2. 24-hour Cookie logic for Free users
+            // 2. 24-hour Cookie bypass for Free users
             const cookieName = "ep_" + animeId + "_" + epNum + "_viewed";
             if(getCookie(cookieName)) {
-                // Agar 24h me pehle click kiya tha, direct jayega
                 window.open(targetLink, '_blank');
                 return;
             }
 
-            btnElement.innerHTML = 'Wait...';
+            btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Wait...';
+            btnElement.classList.add("loading");
             try {
                 const settingsSnap = await getDoc(doc(db, "settings", "general"));
-                const shorteners = settingsSnap.exists() ? (settingsSnap.data().shorteners || []) :[];
+                const shorteners = settingsSnap.exists() ? (settingsSnap.data().shorteners || []) : [];
 
                 if (shorteners.length === 0) {
                     setCookie(cookieName, "1", 24);
                     window.open(targetLink, '_blank');
                 } else {
-                    // MULTI-SHORTENER: Pick random API from available
+                    // MULTI-SHORTENER: Random pick from array
                     const apiObj = shorteners[Math.floor(Math.random() * shorteners.length)];
                     const apiUrl = `${apiObj.url}?api=${apiObj.key}&url=${encodeURIComponent(targetLink)}&format=text`;
 
@@ -145,22 +195,86 @@
                     const shortLink = await response.text();
 
                     if (shortLink && shortLink.startsWith("http")) {
-                        // User ko shortener pe bhejne se pehle cookie set kardo
                         setCookie(cookieName, "1", 24);
-                        window.open(shortLink.trim(), '_blank');
+                        const form = document.createElement('form');
+                        form.method = "GET"; form.action = shortLink.trim(); form.target = "_blank";
+                        document.body.appendChild(form); form.submit();
                     } else {
                         alert("Ad API Error. Try another episode.");
                     }
                 }
-            } catch (error) { alert("Server Connection Error."); } 
-            finally { btnElement.innerHTML = `Episode ${epNum}`; }
+            } catch (error) { 
+                alert("Server Connection Error."); 
+            } finally { 
+                btnElement.innerHTML = `Episode ${epNum}`;
+                btnElement.classList.remove("loading");
+            }
         };
 
         async function loadDetail() {
-            await checkPremiumStatus();
+            await checkPremiumStatus(); // Check premium before loading
+            
             if (!animeId) return;
             const docSnap = await getDoc(doc(db, "anime", animeId));
             
             if (docSnap.exists()) {
                 const a = docSnap.data();
-                const episodes = a.episodes ||
+                const episodes = a.episodes || [];
+                
+                // Sorting numerically
+                episodes.sort((x, y) => String(x.ep).localeCompare(String(y.ep), undefined, {numeric: true}));
+
+                let episodesHTML = "";
+                if(episodes.length === 0) {
+                    episodesHTML = "<p style='color:#aaa; width:100%; text-align:center;'>No episodes uploaded yet.</p>";
+                } else {
+                    episodes.forEach((ep) => {
+                        // SECURITY: Reverse string and then Base64 Encode
+                        const reversedLink = ep.link.split('').reverse().join('');
+                        const secureCode = btoa(reversedLink);
+                        episodesHTML += `<button class="ep-btn" data-secure="${secureCode}" data-epnum="${ep.ep}">Episode ${ep.ep}</button>`;
+                    });
+                }
+
+                document.getElementById("detailBox").innerHTML = `
+                    <div class="detail-container">
+                        <img src="${a.image}" class="detail-img" alt="${a.name}">
+                        
+                        <div class="detail-info">
+                            <div class="info-row"><strong>Name :</strong> ${a.name}</div>
+                            <div class="info-row"><strong>Released date :</strong> ${a.year || "Unknown"}</div>
+                            <div class="info-row"><strong>Genre :</strong> ${a.genre || "General"}</div>
+                            <div class="info-row"><strong>Story :</strong> <div class="story-box">${a.description || "Story not available."}</div></div>
+                        </div>
+                        
+                        <div class="episodes-box">
+                            <h3>Episodes / Batch List</h3>
+                            <div class="episodes-grid">${episodesHTML}</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                document.getElementById("detailBox").innerHTML = "<h2 style='text-align:center;'>Content Not Found!</h2>";
+            }
+        }
+
+        // Event delegation for episode buttons
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.ep-btn');
+            if (btn && btn.hasAttribute('data-secure') && !btn.classList.contains("loading")) {
+                const epNum = btn.getAttribute("data-epnum") || btn.innerText.replace("Episode ", "").trim();
+                processEpisodeClick(btn, epNum);
+            }
+        });
+
+        // Bind premium login/logout buttons after DOM ready
+        window.addEventListener('DOMContentLoaded', () => {
+            const loginBtn = document.getElementById("premLoginBtn");
+            if (loginBtn) loginBtn.addEventListener('click', loginPremium);
+            // logout is inline onclick for simplicity
+        });
+
+        loadDetail();
+    </script>
+</body>
+</html>
