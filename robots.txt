@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://aapka-github.github.io/anime-sub-studio/sitemap.xml
