@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <!-- MASTER SEO METATAGS -->
+    <title>Anime Sub Studio - Watch Hindi Sub & Dub Anime</title>
+    <meta name="description" content="Watch your favorite Anime, K-Dramas, Cartoons, and Movies in Hindi Sub & Dub for free on Anime Sub Studio.">
+    <meta name="keywords" content="Hindi sub anime, Hindi dub anime, Anime sub studio, K drama hindi sub, K drama Hindi dub, movies, cartoon, hindi dubbed anime download">
+    <meta name="robots" content="index, follow">
+    
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+    <header>
+        <div class="header-left">
+            <a href="index.html" class="logo">Anime Sub <span>Studio</span></a>
+        </div>
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input id="searchInput" placeholder="Search Anime, K-Drama, Movies...">
+        </div>
+    </header>
+
+    <!-- Yaha Category Type Apne aap bankar aayenge jo Admin me daaloge -->
+    <div class="filter-container" id="mainFilters">
+        <button onclick="setType('all', this)" class="active">All</button>
+    </div>
+
+    <main id="animeList" class="anime-list">
+        <div class="loader-container">
+            <div class="loader"></div>
+            <h3 style="color:var(--primary);">Loading Content...</h3>
+        </div>
+    </main>
+
+    <div class="social-footer">
+        <a href="https://t.me/hindisubinganime" target="_blank" class="btn-tg"><i class="fab fa-telegram"></i> Free Channel</a>
+        <a href="https://t.me/hindisubanime_q" target="_blank" class="btn-gc"><i class="fas fa-comments"></i> Group</a>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+        const app = initializeApp({
+            apiKey: "AIzaSyAjetcwFJR-5b8h-h5AM2j1O2xSk5srh3M",
+            authDomain: "anime-sub-studio.firebaseapp.com",
+            projectId: "anime-sub-studio"
+        });
+        const db = getFirestore(app);
+
+        let allAnime = [];
+        let currentType = "all";
+        let currentSearch = "";
+
+        async function loadAnime() {
+            try {
+                const snap = await getDocs(collection(db, "anime"));
+                let uniqueTypes = new Set();
+                allAnime = [];
+                
+                snap.forEach(d => {
+                    const data = d.data();
+                    allAnime.push({ id: d.id, ...data });
+                    if(data.type) uniqueTypes.add(data.type.trim());
+                });
+                
+                allAnime.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+                
+                const filterBox = document.getElementById("mainFilters");
+                uniqueTypes.forEach(type => {
+                    const btn = document.createElement("button");
+                    btn.innerText = type;
+                    btn.onclick = function() { window.setType(type, this); };
+                    filterBox.appendChild(btn);
+                });
+                applyFilter();
+            } catch (e) {
+                document.getElementById("animeList").innerHTML = "<h3 style='width:100%;text-align:center;color:red;'>Error Loading Data</h3>";
+            }
+        }
+        
+        function applyFilter() {
+            let filtered = allAnime.filter(a => {
+                const nameStr = (a.name || "").toLowerCase();
+                const typeStr = (a.type || "").toLowerCase();
+                const searchStr = currentSearch.toLowerCase();
+                return nameStr.includes(searchStr) && (currentType === "all" || typeStr === currentType);
+            });
+            render(filtered);
+        }
+
+        function render(list) {
+            let box = document.getElementById("animeList");
+            box.innerHTML = ""; 
+            if (list.length === 0) return box.innerHTML = "<h3 style='width:100%;text-align:center;color:#aaa;margin-top:40px;'>No Content Found</h3>";
+
+            list.forEach(a => {
+                let card = document.createElement("div");
+                card.className = "anime-card";
+                card.innerHTML = `
+                    <div class="badge-type badge-custom">${a.type || "General"}</div>
+                    <img src="${a.image}" loading="lazy" alt="${a.name}">
+                    <div class="anime-info">
+                        <h4>${a.name}</h4>
+                        <span class="genre-tag">Release: ${a.year || "N/A"}</span>
+                    </div>
+                `;
+                card.onclick = () => location.href = "detail.html?id=" + a.id;
+                box.appendChild(card);
+            });
+        }
+
+        window.setType = (type, btn) => {
+            currentType = type;
+            document.querySelectorAll(".filter-container button").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            applyFilter();
+        }
+
+        document.getElementById("searchInput").addEventListener("input", e => {
+            currentSearch = e.target.value.trim(); applyFilter(); 
+        });
+
+        loadAnime();
+    </script>
+</body>
+  </html>
