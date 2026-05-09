@@ -8,24 +8,36 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .detail-container { max-width: 800px; margin: 30px auto; padding: 25px; background: var(--card-bg); border-radius: 20px; display: flex; flex-direction: column; align-items: center; text-align: left; }
-        .detail-img { width: 280px; border-radius: 15px; margin-bottom: 25px; border: 2px solid var(--primary); }
-        .detail-info { width: 100%; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px; margin-bottom: 30px; border: 1px solid rgba(255,255,255,0.05);}
+        .detail-container { max-width: 800px; margin: 30px auto; padding: 25px; background: var(--card-bg); border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; align-items: center; text-align: left; }
+        .detail-img { width: 280px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); object-fit: cover; margin-bottom: 25px; border: 2px solid var(--primary); }
+        .detail-info { width: 100%; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px; margin-bottom: 30px; border: 1px solid rgba(255,255,255,0.05); }
         .info-row { margin-bottom: 15px; font-size: 16px; color: #ddd; }
-        .info-row strong { color: var(--primary); margin-right: 8px;}
-        .story-box { background: #111; padding: 15px; border-radius: 8px; margin-top: 10px; color: #bbb; font-size: 15px; line-height:1.6;}
+        .info-row strong { color: var(--primary); font-size: 18px; margin-right: 8px;}
+        .story-box { background: #111; padding: 15px; border-radius: 8px; margin-top: 10px; color: #bbb; line-height: 1.6; font-size: 15px; }
         .episodes-box { width: 100%; }
         .episodes-box h3 { color: white; margin-bottom: 20px; text-align: center; border-bottom: 1px solid #333; padding-bottom: 10px; }
         .episodes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
-        .ep-btn { background: rgba(255,69,0,0.1); color: white; padding: 12px; text-align: center; border-radius: 10px; cursor: pointer; border: 1px solid rgba(255,69,0,0.3); font-weight:600; transition:0.3s; }
+        .ep-btn { background: rgba(255,69,0,0.1); color: white; padding: 12px; text-align: center; border-radius: 10px; font-weight: 600; cursor: pointer; transition: 0.3s; border: 1px solid rgba(255,69,0,0.3); font-size: 15px; }
         .ep-btn:hover { background: var(--primary); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(255,69,0,0.4); }
         .ep-btn.loading { opacity: 0.6; pointer-events: none; }
-
+        
         /* Premium Box Styles */
-        .premium-box { background: linear-gradient(135deg, #1f1c0d, #3b3112); border: 1px solid #d4af37; padding: 15px; border-radius: 10px; width: 100%; text-align: center; margin-bottom: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-        .premium-input { padding: 10px; border-radius: 5px; border: 1px solid #d4af37; background: #000; color: white; margin: 5px; outline:none;}
-        .premium-btn { background: #d4af37; color: #000; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; border: none; transition:0.3s;}
-        .premium-btn:hover { background: #fff; transform: scale(1.05); }
+        .premium-bar { width: 100%; margin-bottom: 20px; background: linear-gradient(135deg, #1f1c0d, #3b3112); border: 1px solid #d4af37; border-radius: 12px; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .premium-status { color: #d4af37; font-weight: bold; }
+        .premium-login-btn { background: #d4af37; color: #000; padding: 8px 20px; border-radius: 30px; cursor: pointer; font-weight: bold; border: none; transition: 0.3s; }
+        .premium-login-btn:hover { background: #fff; transform: scale(1.02); }
+        .premium-logout-btn { background: #333; color: #ff4500; padding: 8px 20px; border-radius: 30px; cursor: pointer; font-weight: bold; border: 1px solid #ff4500; }
+        .premium-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000; visibility: hidden; opacity: 0; transition: 0.3s; }
+        .premium-modal.active { visibility: visible; opacity: 1; }
+        .premium-modal-content { background: #1a1a2e; padding: 30px; border-radius: 20px; width: 90%; max-width: 350px; text-align: center; border: 2px solid #d4af37; }
+        .premium-modal-content input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #d4af37; background: #0a0a0a; color: white; }
+        .premium-modal-content button { background: #d4af37; color: #000; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; border: none; }
+        
+        .loader-container { text-align: center; margin-top: 50px; }
+        .loader { border: 4px solid #333; border-top: 4px solid #ff4500; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .back-btn { display: inline-block; margin: 20px; color: white; background: #222; padding: 8px 15px; border-radius: 10px; text-decoration: none; }
+        .back-btn:hover { background: #ff4500; }
     </style>
 </head>
 <body>
@@ -34,26 +46,23 @@
         <a href="index.html" class="logo">Anime Sub <span>Studio</span></a>
     </header>
 
-    <a href="index.html" class="back-btn" style="display:inline-block; margin:20px; color:white; background:#222; padding:8px 15px; border-radius:10px; text-decoration:none;"><i class="fas fa-arrow-left"></i> Back to Home</a>
+    <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Home</a>
 
-    <!-- Premium Login / Logout UI (Hidden by default, shown after load) -->
-    <div id="premiumSection" style="max-width:400px; margin: 0 auto 20px; display:none;">
-        <div id="premiumLoginForm" class="premium-box">
-            <h3 style="color:#d4af37;">🔐 Premium Login</h3>
-            <input type="email" id="premEmail" class="premium-input" placeholder="Your Gmail">
-            <input type="password" id="premPass" class="premium-input" placeholder="Password">
-            <button id="premLoginBtn" class="premium-btn">Login</button>
-        </div>
-        <div id="premiumLoggedIn" style="display:none; text-align:center;">
-            <p style="color:#d4af37;">✅ Premium Active</p>
-            <button onclick="logoutPremium()" class="premium-btn" style="background:#c0392b; color:white;">Logout</button>
+    <div id="detailBox">
+        <div class="loader-container">
+            <div class="loader"></div>
+            <h3 style="color:var(--primary);">Loading Details...</h3>
         </div>
     </div>
 
-    <div id="detailBox">
-        <div class="loader-container" style="text-align:center; margin-top:50px;">
-            <div class="loader" style="border: 4px solid #333; border-top: 4px solid #ff4500; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 10px;"></div>
-            <h3 style="color:var(--primary);">Loading Details...</h3>
+    <!-- Premium Modal -->
+    <div id="premiumModal" class="premium-modal">
+        <div class="premium-modal-content">
+            <h3 style="color:#d4af37;">💎 Premium Login</h3>
+            <input type="email" id="premEmail" placeholder="Email" autocomplete="off">
+            <input type="password" id="premPass" placeholder="Password">
+            <button id="modalLoginBtn">Login</button>
+            <p style="margin-top: 15px; font-size: 12px; color: #aaa;">28 Days Plan | 1 Device Only</p>
         </div>
     </div>
 
@@ -61,6 +70,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
+        // Firebase Config
         const app = initializeApp({
             apiKey: "AIzaSyAjetcwFJR-5b8h-h5AM2j1O2xSk5srh3M",
             authDomain: "anime-sub-studio.firebaseapp.com",
@@ -71,8 +81,17 @@
         const animeId = urlParams.get('id');
 
         let isPremium = false;
+        let currentAnimeData = null;
+        let currentEpisodes = [];
 
-        // Cookie helpers
+        // Device ID
+        let myDeviceId = localStorage.getItem("myDeviceId");
+        if (!myDeviceId) {
+            myDeviceId = Math.random().toString(36).substring(2);
+            localStorage.setItem("myDeviceId", myDeviceId);
+        }
+
+        // Cookie Helpers (24 hours)
         function setCookie(name, value, hours) {
             const d = new Date();
             d.setTime(d.getTime() + (hours * 60 * 60 * 1000));
@@ -80,200 +99,252 @@
         }
         function getCookie(name) {
             const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-            if (match) return match[2];
+            return match ? match[2] : null;
         }
 
-        // Premium Login System (1 Device Lock + 28 Days)
+        // Check Premium Status from Firebase + LocalStorage
+        async function checkPremiumStatus() {
+            const savedEmail = localStorage.getItem("premiumUserEmail");
+            if (!savedEmail) return false;
+            
+            try {
+                const snap = await getDoc(doc(db, "premium_users", savedEmail));
+                if (snap.exists()) {
+                    const data = snap.data();
+                    if (Date.now() > data.expiresAt) {
+                        localStorage.removeItem("premiumUserEmail");
+                        return false;
+                    }
+                    if (data.deviceId && data.deviceId !== myDeviceId) {
+                        localStorage.removeItem("premiumUserEmail");
+                        return false;
+                    }
+                    return true;
+                } else {
+                    localStorage.removeItem("premiumUserEmail");
+                    return false;
+                }
+            } catch(e) {
+                return false;
+            }
+        }
+
+        // Premium Login Function
         window.loginPremium = async () => {
             const email = document.getElementById("premEmail").value.trim().toLowerCase();
             const pass = document.getElementById("premPass").value.trim();
-            if(!email || !pass) return alert("Email & Password required");
-            
-            document.getElementById("premLoginBtn").innerText = "Wait...";
+            if (!email || !pass) {
+                alert("Email & Password required!");
+                return;
+            }
+            const btn = document.getElementById("modalLoginBtn");
+            const originalText = btn.innerText;
+            btn.innerText = "Checking...";
             
             try {
                 const snap = await getDoc(doc(db, "premium_users", email));
-                if(snap.exists() && snap.data().password === pass) {
-                    const data = snap.data();
-                    if(Date.now() > data.expiresAt) return alert("❌ Your 28-Days Plan has Expired!");
-                    
-                    let myDevice = localStorage.getItem("myDeviceId");
-                    if(!myDevice) {
-                        myDevice = Math.random().toString(36).substring(2);
-                        localStorage.setItem("myDeviceId", myDevice);
+                if (snap.exists() && snap.data().password === pass) {
+                    const userData = snap.data();
+                    if (Date.now() > userData.expiresAt) {
+                        alert("❌ Your 28-Days Plan has Expired!");
+                        btn.innerText = originalText;
+                        return;
                     }
-
-                    if(data.deviceId && data.deviceId !== myDevice) {
-                        return alert("❌ Account is already logged in on another device! Contact Admin.");
+                    if (userData.deviceId && userData.deviceId !== myDeviceId) {
+                        alert("❌ Account already logged in on another device!");
+                        btn.innerText = originalText;
+                        return;
                     }
-                    
-                    await updateDoc(doc(db, "premium_users", email), { deviceId: myDevice });
+                    // Update device ID
+                    await updateDoc(doc(db, "premium_users", email), { deviceId: myDeviceId });
                     localStorage.setItem("premiumUserEmail", email);
                     alert("💎 Premium Login Successful! Enjoy Direct Links.");
+                    document.getElementById("premiumModal").classList.remove("active");
                     location.reload();
                 } else {
                     alert("❌ Invalid Email or Password!");
-                    document.getElementById("premLoginBtn").innerText = "Login";
                 }
-            } catch(e) { 
-                alert("Error connecting to server."); 
-                document.getElementById("premLoginBtn").innerText = "Login";
-            }
-        };
-
-        window.logoutPremium = () => { 
-            localStorage.removeItem("premiumUserEmail"); 
-            location.reload(); 
-        };
-
-        // Check if user is currently Premium
-        async function checkPremiumStatus() {
-            const email = localStorage.getItem("premiumUserEmail");
-            if(email) {
-                const snap = await getDoc(doc(db, "premium_users", email));
-                if(snap.exists() && Date.now() < snap.data().expiresAt && snap.data().deviceId === localStorage.getItem("myDeviceId")) {
-                    isPremium = true;
-                } else {
-                    localStorage.removeItem("premiumUserEmail");
-                }
-            }
-            // Show Premium UI after status known
-            const section = document.getElementById("premiumSection");
-            if (section) {
-                section.style.display = "block";
-                if (isPremium) {
-                    document.getElementById("premiumLoginForm").style.display = "none";
-                    document.getElementById("premiumLoggedIn").style.display = "block";
-                } else {
-                    document.getElementById("premiumLoginForm").style.display = "block";
-                    document.getElementById("premiumLoggedIn").style.display = "none";
-                }
-            }
-        }
-
-        // Episode Click Handler (Multi-Shortener Random + Cookie Bypass + Premium)
-        window.processEpisodeClick = async function(btnElement, epNum) {
-            // Secure Decode: reverse + base64 -> original link
-            let targetLink;
-            try {
-                const secureData = btnElement.getAttribute("data-secure");
-                const reversed = atob(secureData);
-                targetLink = reversed.split('').reverse().join('');
             } catch(e) {
-                alert("Invalid link data.");
-                return;
+                alert("Server error. Try again.");
+            } finally {
+                btn.innerText = originalText;
             }
-            
-            // 1. Premium users skip everything (Direct original link)
-            if(isPremium) {
-                window.open(targetLink, '_blank');
+        };
+
+        window.logoutPremium = () => {
+            localStorage.removeItem("premiumUserEmail");
+            location.reload();
+        };
+
+        window.showPremiumModal = () => {
+            document.getElementById("premiumModal").classList.add("active");
+        };
+        
+        window.closeModal = () => {
+            document.getElementById("premiumModal").classList.remove("active");
+        };
+
+        // Episode Click Handler with Premium + 24hr Cookie Bypass
+        window.processEpisodeClick = async function(btnElement, epNum, originalLink) {
+            if (btnElement.classList.contains("loading")) return;
+            const originalText = btnElement.innerHTML;
+
+            // PREMIUM USERS: Direct link (no shortener, no cookie check)
+            if (isPremium) {
+                window.open(originalLink, '_blank');
                 return;
             }
 
-            // 2. 24-hour Cookie bypass for Free users
-            const cookieName = "ep_" + animeId + "_" + epNum + "_viewed";
-            if(getCookie(cookieName)) {
-                window.open(targetLink, '_blank');
+            // FREE USER: Check 24hr cookie
+            const cookieName = `ep_${animeId}_${epNum}_viewed`;
+            if (getCookie(cookieName)) {
+                // Already watched in last 24 hours -> direct open
+                window.open(originalLink, '_blank');
                 return;
             }
 
             btnElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Wait...';
             btnElement.classList.add("loading");
+
             try {
                 const settingsSnap = await getDoc(doc(db, "settings", "general"));
-                const shorteners = settingsSnap.exists() ? (settingsSnap.data().shorteners || []) : [];
+                const data = settingsSnap.exists() ? settingsSnap.data() : null;
+                const shorteners = data ? (data.shorteners || []) : [];
 
                 if (shorteners.length === 0) {
+                    // No shortener configured, set cookie and go direct
                     setCookie(cookieName, "1", 24);
-                    window.open(targetLink, '_blank');
-                } else {
-                    // MULTI-SHORTENER: Random pick from array
-                    const apiObj = shorteners[Math.floor(Math.random() * shorteners.length)];
-                    const apiUrl = `${apiObj.url}?api=${apiObj.key}&url=${encodeURIComponent(targetLink)}&format=text`;
-
-                    const response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`);
-                    const shortLink = await response.text();
-
-                    if (shortLink && shortLink.startsWith("http")) {
-                        setCookie(cookieName, "1", 24);
-                        const form = document.createElement('form');
-                        form.method = "GET"; form.action = shortLink.trim(); form.target = "_blank";
-                        document.body.appendChild(form); form.submit();
-                    } else {
-                        alert("Ad API Error. Try another episode.");
-                    }
+                    window.open(originalLink, '_blank');
+                    resetBtn(btnElement, `Episode ${epNum}`);
+                    return;
                 }
-            } catch (error) { 
-                alert("Server Connection Error."); 
-            } finally { 
-                btnElement.innerHTML = `Episode ${epNum}`;
-                btnElement.classList.remove("loading");
+
+                // Use first shortener (or random)
+                const apiObj = shorteners[0];
+                const apiUrl = `${apiObj.url}?api=${apiObj.key}&url=${encodeURIComponent(originalLink)}&format=text`;
+
+                const response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`);
+                const shortLink = await response.text();
+
+                if (shortLink && shortLink.startsWith("http")) {
+                    // Set 24 hour cookie so next time direct
+                    setCookie(cookieName, "1", 24);
+                    const form = document.createElement('form');
+                    form.method = "GET"; form.action = shortLink.trim(); form.target = "_blank";
+                    document.body.appendChild(form); form.submit();
+                    setTimeout(() => form.remove(), 100);
+                } else {
+                    alert("Shortener API Error. Try again.");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Connection Error. Please retry.");
+            } finally {
+                resetBtn(btnElement, `Episode ${epNum}`);
             }
         };
 
+        function resetBtn(btn, text) { 
+            btn.innerHTML = text; 
+            btn.classList.remove("loading"); 
+        }
+
         async function loadDetail() {
-            await checkPremiumStatus(); // Check premium before loading
+            if (!animeId) {
+                document.getElementById("detailBox").innerHTML = "<h2 style='text-align:center;'>Invalid Anime ID!</h2>";
+                return;
+            }
             
-            if (!animeId) return;
+            // Check premium first
+            isPremium = await checkPremiumStatus();
+            
             const docSnap = await getDoc(doc(db, "anime", animeId));
             
             if (docSnap.exists()) {
                 const a = docSnap.data();
-                const episodes = a.episodes || [];
+                const episodesRaw = a.episodes || [];
+                // Sort episodes numerically
+                const episodes = [...episodesRaw].sort((x, y) => String(x.ep).localeCompare(String(y.ep), undefined, {numeric: true}));
+                currentEpisodes = episodes;
                 
-                // Sorting numerically
-                episodes.sort((x, y) => String(x.ep).localeCompare(String(y.ep), undefined, {numeric: true}));
-
                 let episodesHTML = "";
-                if(episodes.length === 0) {
+                if (episodes.length === 0) {
                     episodesHTML = "<p style='color:#aaa; width:100%; text-align:center;'>No episodes uploaded yet.</p>";
                 } else {
                     episodes.forEach((ep) => {
-                        // SECURITY: Reverse string and then Base64 Encode
+                        // SAME SECURITY as old file: Reverse + Base64
                         const reversedLink = ep.link.split('').reverse().join('');
                         const secureCode = btoa(reversedLink);
-                        episodesHTML += `<button class="ep-btn" data-secure="${secureCode}" data-epnum="${ep.ep}">Episode ${ep.ep}</button>`;
+                        episodesHTML += `<button class="ep-btn" data-ep-num="${ep.ep}" data-secure="${secureCode}" data-original="${ep.link.replace(/"/g, '&quot;')}">Episode ${ep.ep}</button>`;
                     });
                 }
-
+                
+                // Premium Bar HTML (show status)
+                const premiumBarHTML = isPremium ? 
+                    `<div class="premium-bar">
+                        <span class="premium-status"><i class="fas fa-crown"></i> Premium Active (Direct Links)</span>
+                        <button class="premium-logout-btn" onclick="logoutPremium()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                    </div>` :
+                    `<div class="premium-bar">
+                        <span class="premium-status" style="color:#aaa;"><i class="fas fa-lock"></i> Free Mode (Ad Links)</span>
+                        <button class="premium-login-btn" onclick="showPremiumModal()"><i class="fas fa-gem"></i> Upgrade Premium</button>
+                    </div>`;
+                
                 document.getElementById("detailBox").innerHTML = `
                     <div class="detail-container">
-                        <img src="${a.image}" class="detail-img" alt="${a.name}">
-                        
+                        ${premiumBarHTML}
+                        <img src="${a.image}" class="detail-img" onerror="this.src='https://via.placeholder.com/280x400?text=No+Image'">
                         <div class="detail-info">
-                            <div class="info-row"><strong>Name :</strong> ${a.name}</div>
-                            <div class="info-row"><strong>Released date :</strong> ${a.year || "Unknown"}</div>
-                            <div class="info-row"><strong>Genre :</strong> ${a.genre || "General"}</div>
-                            <div class="info-row"><strong>Story :</strong> <div class="story-box">${a.description || "Story not available."}</div></div>
+                            <div class="info-row"><strong>📺 Name :</strong> ${a.name}</div>
+                            <div class="info-row"><strong>📅 Released :</strong> ${a.year || "Unknown"}</div>
+                            <div class="info-row"><strong>🎭 Genre :</strong> ${a.genre || "General"}</div>
+                            <div class="info-row"><strong>📖 Story :</strong> <div class="story-box">${a.description || "Story not available."}</div></div>
                         </div>
-                        
                         <div class="episodes-box">
-                            <h3>Episodes / Batch List</h3>
+                            <h3>📀 Episodes List</h3>
                             <div class="episodes-grid">${episodesHTML}</div>
                         </div>
                     </div>
                 `;
             } else {
-                document.getElementById("detailBox").innerHTML = "<h2 style='text-align:center;'>Content Not Found!</h2>";
+                document.getElementById("detailBox").innerHTML = "<h2 style='text-align:center; color:#ff4500;'>❌ Anime Not Found!</h2>";
             }
         }
 
-        // Event delegation for episode buttons
+        // Global click handler for ep buttons (delegation)
         document.addEventListener('click', (e) => {
             const btn = e.target.closest('.ep-btn');
-            if (btn && btn.hasAttribute('data-secure') && !btn.classList.contains("loading")) {
-                const epNum = btn.getAttribute("data-epnum") || btn.innerText.replace("Episode ", "").trim();
-                processEpisodeClick(btn, epNum);
+            if (btn && btn.hasAttribute('data-secure')) {
+                const secureData = btn.getAttribute('data-secure');
+                const originalLinkRaw = btn.getAttribute('data-original');
+                const epNum = btn.getAttribute('data-ep-num');
+                
+                // Decode the Base64 + Reverse to get actual link (same method as old file)
+                let actualLink = "";
+                try {
+                    const reversed = atob(secureData);
+                    actualLink = reversed.split('').reverse().join('');
+                } catch(e) {
+                    actualLink = originalLinkRaw;
+                }
+                
+                if (!actualLink) {
+                    alert("Link not available.");
+                    return;
+                }
+                processEpisodeClick(btn, epNum, actualLink);
             }
         });
 
-        // Bind premium login/logout buttons after DOM ready
-        window.addEventListener('DOMContentLoaded', () => {
-            const loginBtn = document.getElementById("premLoginBtn");
-            if (loginBtn) loginBtn.addEventListener('click', loginPremium);
-            // logout is inline onclick for simplicity
+        // Close modal on outside click
+        document.getElementById("premiumModal").addEventListener("click", (e) => {
+            if (e.target === document.getElementById("premiumModal")) {
+                document.getElementById("premiumModal").classList.remove("active");
+            }
         });
-
+        
+        document.getElementById("modalLoginBtn").addEventListener("click", loginPremium);
+        
         loadDetail();
     </script>
 </body>
