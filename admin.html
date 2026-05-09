@@ -32,39 +32,70 @@
     <div id="adminPanel" style="display:none">
         <button id="logoutBtn" style="background: #333; margin-bottom: 15px; width: auto; padding: 8px 20px;">🚪 Logout</button>
 
+        <!-- ADD ANIME -->
         <div class="box">
             <h3>🎬 Add New Content</h3>
             <input id="newName" placeholder="Name (e.g., Solo Leveling)">
             <div class="grid-2">
-                <input id="newYear" type="text" placeholder="Released Date (e.g., 2024)">
-                <input id="newGenre" placeholder="Genre (e.g., Action, Romance)">
+                <input id="newYear" type="text" placeholder="Released Date">
+                <input id="newGenre" placeholder="Genre">
             </div>
-            <!-- CATEGORY / TYPE (Direct Type TextBox) -->
             <input id="newType" type="text" placeholder="Type (e.g., K-Drama Hindi Sub, Cartoon, Movies)">
-            
             <textarea id="newDesc" rows="4" placeholder="Story / Synopsis"></textarea>
             <button id="uploadImgBtn" type="button" style="background:#1e5f8e; margin-bottom:10px;">🖼️ Upload Image</button>
             <img id="imgPreview" style="max-width: 140px; display:none; margin: 0 auto 10px; border-radius: 8px;">
             <button id="addAnimeBtn">➕ Save Content</button>
         </div>
 
+        <!-- EPISODE MANAGEMENT W/ SEARCH -->
         <div class="box">
             <h3>📺 Episode Management</h3>
+            <input type="text" id="epSearch" placeholder="🔍 Search Anime/Movie name here...">
             <select id="animeSelect"><option value="">-- Select Content --</option></select>
             <div class="grid-2">
-                <!-- EPISODE NUMBER AS TEXT -->
-                <input id="epNum" type="text" placeholder="Episode No. (e.g. 01, 01-05, Batch 1)">
+                <input id="epNum" type="text" placeholder="Episode No. (e.g. 01, 01-05)">
                 <input id="epLink" placeholder="Original Link (Drive/Mega)">
             </div>
             <button id="addEpBtn">➕ Add Episode</button>
             <div id="episodesContainer" class="ep-list"></div>
         </div>
 
+        <!-- PREMIUM USER SYSTEM (28 DAYS) -->
         <div class="box">
-            <h3>🔗 Shortener Settings</h3>
-            <input id="shortUrl" placeholder="Site URL (e.g. adrinolinks.in/api)">
-            <input id="shortKey" placeholder="Your API Token">
-            <button id="saveShortBtn">💾 Save API</button>
+            <h3>💎 Add Premium User (28 Days)</h3>
+            <div class="grid-2">
+                <input id="premiumEmail" placeholder="User Gmail">
+                <input id="premiumPass" placeholder="Create Password">
+            </div>
+            <button id="addPremiumBtn" style="background: #d4af37; color:#000;">⭐ Activate Premium User</button>
+            <p id="premiumMsg" style="color:#d4af37; margin-top:10px; text-align:center;"></p>
+        </div>
+
+        <!-- 3 SHORTENER SUPPORT RESTORED -->
+        <div class="box">
+            <h3>🔗 Multi-Shortener Settings (3 Accounts)</h3>
+            <div style="background:#141419; padding:10px; border-radius:8px; margin-bottom:10px;">
+                <label style="color:#ff4500; font-size:12px;">Shortener 1 (Main)</label>
+                <div class="grid-2">
+                    <input id="s1Url" placeholder="Site URL (e.g. adrinolinks.in/api)">
+                    <input id="s1Key" placeholder="API Token">
+                </div>
+            </div>
+            <div style="background:#141419; padding:10px; border-radius:8px; margin-bottom:10px;">
+                <label style="color:#ff4500; font-size:12px;">Shortener 2 (Backup)</label>
+                <div class="grid-2">
+                    <input id="s2Url" placeholder="Site URL">
+                    <input id="s2Key" placeholder="API Token">
+                </div>
+            </div>
+            <div style="background:#141419; padding:10px; border-radius:8px; margin-bottom:10px;">
+                <label style="color:#ff4500; font-size:12px;">Shortener 3 (Backup)</label>
+                <div class="grid-2">
+                    <input id="s3Url" placeholder="Site URL">
+                    <input id="s3Key" placeholder="API Token">
+                </div>
+            </div>
+            <button id="saveShortBtn">💾 Save All APIs</button>
         </div>
         
         <div class="box">
@@ -97,24 +128,60 @@
 
     document.getElementById("loginBtn").onclick = async () => {
         try { await signInWithEmailAndPassword(auth, document.getElementById("adminEmail").value, document.getElementById("adminPass").value); } 
-        catch (e) { alert("Login failed! Check ID/Password."); }
+        catch (e) { alert("Login failed!"); }
     };
     document.getElementById("logoutBtn").onclick = () => signOut(auth);
 
+    // RESTORED: Dropdown Search Feature
+    document.getElementById("epSearch").addEventListener("input", function(e) {
+        const term = e.target.value.toLowerCase();
+        const options = document.getElementById("animeSelect").options;
+        for(let i = 1; i < options.length; i++) {
+            options[i].style.display = options[i].text.toLowerCase().includes(term) ? "block" : "none";
+        }
+    });
+
+    // PREMIUM USER ADD (28 Days logic)
+    document.getElementById("addPremiumBtn").onclick = async () => {
+        const email = document.getElementById("premiumEmail").value.trim().toLowerCase();
+        const pass = document.getElementById("premiumPass").value.trim();
+        if(!email || !pass) return alert("Email aur Password dono daalo!");
+        
+        const expiresAt = Date.now() + (28 * 24 * 60 * 60 * 1000); // 28 Days in milliseconds
+        
+        await setDoc(doc(db, "premium_users", email), {
+            password: pass,
+            expiresAt: expiresAt,
+            deviceId: null // Will be locked on first login
+        });
+        document.getElementById("premiumMsg").innerText = `✅ User ${email} Added! Validity: 28 Days.`;
+        document.getElementById("premiumEmail").value = "";
+        document.getElementById("premiumPass").value = "";
+    };
+
+    // RESTORED: 3 Shortener Logic
     async function loadSettings() {
         const snap = await getDoc(doc(db, "settings", "general"));
-        if(snap.exists() && snap.data().shorteners && snap.data().shorteners[0]) {
-            document.getElementById("shortUrl").value = snap.data().shorteners[0].url;
-            document.getElementById("shortKey").value = snap.data().shorteners[0].key;
+        if(snap.exists() && snap.data().shorteners) {
+            const apis = snap.data().shorteners;
+            if(apis[0]) { document.getElementById("s1Url").value = apis[0].url; document.getElementById("s1Key").value = apis[0].key; }
+            if(apis[1]) { document.getElementById("s2Url").value = apis[1].url; document.getElementById("s2Key").value = apis[1].key; }
+            if(apis[2]) { document.getElementById("s3Url").value = apis[2].url; document.getElementById("s3Key").value = apis[2].key; }
         }
     }
 
     document.getElementById("saveShortBtn").onclick = async () => {
-        let url = document.getElementById("shortUrl").value.trim();
-        let key = document.getElementById("shortKey").value.trim();
-        if(url && !url.endsWith("/api")) url += "/api";
-        await setDoc(doc(db, "settings", "general"), { shorteners: [{url, key}] }, {merge: true});
-        alert("API Saved!");
+        let shortenersToSave =[];
+        for(let i=1; i<=3; i++) {
+            let url = document.getElementById(`s${i}Url`).value.trim();
+            let key = document.getElementById(`s${i}Key`).value.trim();
+            if(url && key) {
+                if(!url.endsWith("/api")) url += "/api";
+                shortenersToSave.push({url, key});
+            }
+        }
+        await setDoc(doc(db, "settings", "general"), { shorteners: shortenersToSave }, {merge: true});
+        alert("All APIs Saved Successfully!");
     };
 
     document.getElementById("uploadImgBtn").onclick = () => {
@@ -131,11 +198,10 @@
         const name = document.getElementById("newName").value;
         const type = document.getElementById("newType").value.trim() || "Anime"; 
         if(!name || !uploadedImage) return alert("Name & Image required!");
-        
         await addDoc(collection(db, "anime"), {
             name: name, year: document.getElementById("newYear").value, genre: document.getElementById("newGenre").value,
             type: type, description: document.getElementById("newDesc").value, image: uploadedImage,
-            episodes: [], updatedAt: Date.now()
+            episodes:[], updatedAt: Date.now()
         });
         alert("Content Saved!"); loadList();
     };
@@ -157,7 +223,7 @@
     async function fetchEpisodes() {
         if(!selectedAnimeId) return;
         const snap = await getDoc(doc(db, "anime", selectedAnimeId));
-        const eps = snap.data().episodes || [];
+        const eps = snap.data().episodes ||[];
         document.getElementById("episodesContainer").innerHTML = eps.map(ep => `
             <div class="ep-item">
                 <span>Ep: ${ep.ep}</span>
