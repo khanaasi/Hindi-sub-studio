@@ -8,53 +8,43 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .detail-container { max-width: 800px; margin: 30px auto; padding: 25px; background: var(--card-bg); border-radius: 20px; display: flex; flex-direction: column; align-items: center; text-align: left; }
-        .detail-img { width: 280px; border-radius: 15px; margin-bottom: 25px; border: 2px solid var(--primary); }
+        .detail-container { max-width: 800px; margin: 30px auto; padding: 25px; background: #15151a; border-radius: 20px; display: flex; flex-direction: column; align-items: center; text-align: left; }
+        .detail-img { width: 280px; border-radius: 15px; margin-bottom: 25px; border: 2px solid #ff4500; }
         .detail-info { width: 100%; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px; margin-bottom: 30px; border: 1px solid rgba(255,255,255,0.05);}
         .info-row { margin-bottom: 15px; font-size: 16px; color: #ddd; }
-        .info-row strong { color: var(--primary); margin-right: 8px;}
+        .info-row strong { color: #ff4500; margin-right: 8px;}
         .story-box { background: #111; padding: 15px; border-radius: 8px; margin-top: 10px; color: #bbb; font-size: 15px; line-height:1.6;}
         .episodes-box { width: 100%; }
         .episodes-box h3 { color: white; margin-bottom: 20px; text-align: center; border-bottom: 1px solid #333; padding-bottom: 10px; }
         .episodes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
-        .ep-btn { background: rgba(255,69,0,0.1); color: white; padding: 12px; text-align: center; border-radius: 10px; cursor: pointer; border: 1px solid rgba(255,69,0,0.3); font-weight:600; transition:0.3s;}
-        .ep-btn:hover { background: var(--primary); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(255,69,0,0.4); }
-        
-        /* Modal Popup Design */
+        .ep-btn { background: rgba(255,69,0,0.1); color: white; padding: 12px; text-align: center; border-radius: 10px; cursor: pointer; border: 1px solid rgba(255,69,0,0.3); font-weight:600;}
+        .ep-btn:hover { background: #ff4500; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(255,69,0,0.4); }
         .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center; backdrop-filter: blur(5px); }
-        .modal-box { background: #15151a; padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; border: 1px solid #ff4500; box-shadow: 0 10px 30px rgba(255,69,0,0.3); }
+        .modal-box { background: #15151a; padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; border: 1px solid #ff4500; }
         .modal-box h3 { color: white; margin-bottom: 20px; }
         .modal-btn { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; font-size: 15px; transition: 0.3s;}
         .btn-free { background: #222; color: #fff; border: 1px solid #444; }
         .btn-free:hover { background: #ff4500; border-color: #ff4500; }
         .btn-prem { background: linear-gradient(135deg, #d4af37, #f3e5ab); color: #000; }
         .btn-prem:hover { transform: scale(1.03); box-shadow: 0 5px 15px rgba(212,175,55,0.4); }
-        
         .login-form { display: none; background: #0a0a0c; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #333;}
         .login-form input { width: 100%; padding: 10px; margin-bottom: 10px; background: #111; border: 1px solid #444; color: white; border-radius: 5px; outline:none;}
         .login-form button { width: 100%; padding: 10px; background: #d4af37; color: #000; border: none; border-radius: 5px; font-weight: bold; cursor:pointer;}
     </style>
 </head>
 <body>
-
-    <header>
-        <a href="index.html" class="logo">Anime Sub <span>Studio</span></a>
-    </header>
-
-    <a href="index.html" style="display:inline-block; margin:20px; color:white; background:#222; padding:8px 15px; border-radius:10px; text-decoration:none;"><i class="fas fa-arrow-left"></i> Back to Home</a>
+    <header><a href="index.html" class="logo">Anime Sub <span style="color:#ff4500;">Studio</span></a></header>
+    <a href="index.html" style="display:inline-block; margin:20px; color:white; background:#222; padding:8px 15px; border-radius:10px; text-decoration:none;"><i class="fas fa-arrow-left"></i> Back</a>
 
     <div id="detailBox">
-        <div class="loader-container" style="text-align:center; margin-top:50px;">
-            <div class="loader" style="border: 4px solid #333; border-top: 4px solid #ff4500; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 10px;"></div>
-            <h3 style="color:var(--primary);">Loading Details...</h3>
-        </div>
+        <h3 style="color:#ff4500; text-align:center; margin-top:50px;">Loading...</h3>
     </div>
 
     <!-- POPUP MODAL -->
     <div id="epModal" class="modal-overlay">
         <div class="modal-box">
-            <h3>Choose Option</h3>
-            <button class="modal-btn btn-free" id="btnFree" onclick="openFreeLink()"><i class="fas fa-link"></i> Free User (Solve Shortener)</button>
+            <h3>Select Action</h3>
+            <button class="modal-btn btn-free" id="btnFree" onclick="openFreeLink()"><i class="fas fa-link"></i> Solve Shortener (Free)</button>
             <button class="modal-btn btn-prem" onclick="togglePremiumForm()"><i class="fas fa-gem"></i> Premium Direct Link</button>
             
             <div id="premiumForm" class="login-form">
@@ -62,8 +52,7 @@
                 <input type="password" id="pPass" placeholder="Password">
                 <button id="pLoginBtn" onclick="loginAndOpenPremium()">Login & Open</button>
             </div>
-            
-            <button onclick="closeModal()" style="margin-top:10px; background:transparent; color:#aaa; border:none; cursor:pointer; font-size:14px;"><u>Cancel</u></button>
+            <button onclick="closeModal()" style="margin-top:10px; background:transparent; color:#aaa; border:none; cursor:pointer;"><u>Cancel</u></button>
         </div>
     </div>
 
@@ -77,178 +66,129 @@
             projectId: "anime-sub-studio"
         });
         const db = getFirestore(app);
-        const urlParams = new URLSearchParams(window.location.search);
-        const animeId = urlParams.get('id');
+        const animeId = new URLSearchParams(window.location.search).get('id');
 
         let currentTargetLink = "";
         let isGlobalPremium = false;
 
-        // Make Unique Device ID
         let myDevice = localStorage.getItem("myDeviceId");
-        if(!myDevice) {
-            myDevice = "DEV_" + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem("myDeviceId", myDevice);
-        }
+        if(!myDevice) { myDevice = "DEV_" + Math.random().toString(36).substr(2, 9); localStorage.setItem("myDeviceId", myDevice); }
 
-        // Check if already logged in securely
         async function checkAutoPremium() {
-            let email = localStorage.getItem("premiumUserEmail");
-            let pass = localStorage.getItem("premiumUserPass");
+            let email = localStorage.getItem("premEmail"), pass = localStorage.getItem("premPass");
             if(email && pass) {
                 const snap = await getDoc(doc(db, "premium_users", email));
-                if(snap.exists() && snap.data().password === pass) {
-                    if(Date.now() < snap.data().expiresAt && snap.data().deviceId === myDevice) {
-                        isGlobalPremium = true;
-                    }
+                if(snap.exists() && snap.data().password === pass && Date.now() < snap.data().expiresAt && snap.data().deviceId === myDevice) {
+                    isGlobalPremium = true;
+                } else {
+                    localStorage.removeItem("premEmail"); localStorage.removeItem("premPass");
                 }
             }
         }
 
-        // Handle Click on Episode Button
         window.processEpisodeClick = function(secureData) {
-            currentTargetLink = atob(secureData); // Decode Link
-            
-            if(isGlobalPremium) {
-                // Agar user pehle se login hai, direct video kholo
-                window.open(currentTargetLink, '_blank');
-            } else {
-                // Varna Popup Dikhao
-                document.getElementById('epModal').style.display = 'flex';
-                document.getElementById('premiumForm').style.display = 'none';
-            }
+            currentTargetLink = atob(secureData);
+            if(isGlobalPremium) window.open(currentTargetLink, '_blank'); 
+            else { document.getElementById('epModal').style.display = 'flex'; document.getElementById('premiumForm').style.display = 'none'; }
         };
 
         window.closeModal = () => document.getElementById('epModal').style.display = 'none';
         window.togglePremiumForm = () => document.getElementById('premiumForm').style.display = 'block';
 
-        // FREE USER: API LINK GENERATE LOGIC
+        function makeUniqueUrl(original) {
+            const hashIndex = original.indexOf('#');
+            let hash = "", base = original;
+            if (hashIndex !== -1) { hash = original.substring(hashIndex); base = original.substring(0, hashIndex); }
+            const sep = base.includes('?') ? '&' : '?';
+            return base + sep + "asi_uid=" + Math.random().toString(36).substring(2,10) + hash;
+        }
+
         window.openFreeLink = async function() {
             const btnFree = document.getElementById("btnFree");
             btnFree.innerHTML = "Generating Link...";
-            
             try {
-                const settingsSnap = await getDoc(doc(db, "settings", "general"));
-                const shorteners = settingsSnap.exists() ? (settingsSnap.data().shorteners || []) :[];
+                const snap = await getDoc(doc(db, "settings", "general"));
+                const apis = snap.exists() ? (snap.data().shorteners || []) :[];
+                if (apis.length === 0) { window.open(currentTargetLink, '_blank'); closeModal(); return; }
 
-                if (shorteners.length === 0) {
-                    // Agar admin ne shortener lagaya hi nahi hai
-                    window.open(currentTargetLink, '_blank');
-                    closeModal();
-                } else {
-                    // Pick 1 API randomly
-                    const apiObj = shorteners[Math.floor(Math.random() * shorteners.length)];
-                    const apiUrl = `${apiObj.url}?api=${apiObj.key}&url=${encodeURIComponent(currentTargetLink)}&format=text`;
+                let rawIdx = localStorage.getItem('shortIdx');
+                let storedIdx = (rawIdx && !isNaN(parseInt(rawIdx))) ? parseInt(rawIdx) : 0;
+                const randomAPI = apis[storedIdx % apis.length];
+                localStorage.setItem('shortIdx', storedIdx + 1);
 
-                    // Using JSON proxy to avoid CORS and get clean string
-                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`;
-                    const response = await fetch(proxyUrl);
-                    const data = await response.json();
-                    
-                    const shortLink = data.contents.trim();
+                const uLink = makeUniqueUrl(currentTargetLink);
+                const apiUrl = `${randomAPI.url}?api=${randomAPI.key}&url=${encodeURIComponent(uLink)}&format=text`;
 
-                    if (shortLink && shortLink.startsWith("http")) {
-                        window.open(shortLink, '_blank');
-                        closeModal();
-                    } else {
-                        alert("Shortener API Error! Please try another API.");
-                    }
+                let fLink = null;
+                try {
+                    const res = await fetch(apiUrl, { headers: { "Accept": "text/plain" } });
+                    const txt = await res.text();
+                    if(txt && txt.startsWith("http")) fLink = txt.trim();
+                } catch(e) {}
+
+                if(!fLink) {
+                    const pRes = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`);
+                    const pTxt = await pRes.text();
+                    if(pTxt && pTxt.startsWith("http")) fLink = pTxt.trim();
                 }
-            } catch (error) { 
-                alert("Server Connection Failed!"); 
-            } finally {
-                btnFree.innerHTML = '<i class="fas fa-link"></i> Free User (Solve Shortener)';
-            }
+
+                if(fLink && fLink.startsWith("http")) {
+                    const form = document.createElement('form');
+                    form.method = "GET"; form.action = fLink; form.target = "_blank";
+                    document.body.appendChild(form); form.submit(); document.body.removeChild(form);
+                    closeModal();
+                } else { alert("Shortener API Error."); }
+            } catch (err) { alert("Server Error."); } 
+            finally { btnFree.innerHTML = '<i class="fas fa-link"></i> Solve Shortener (Free)'; }
         };
 
-        // PREMIUM USER: LOGIN & DIRECT LINK
         window.loginAndOpenPremium = async function() {
-            const email = document.getElementById("pEmail").value.trim().toLowerCase();
-            const pass = document.getElementById("pPass").value.trim();
-            const pBtn = document.getElementById("pLoginBtn");
-
-            if(!email || !pass) return alert("Enter Email and Password!");
-            
-            pBtn.innerText = "Checking...";
-            
+            const email = document.getElementById("pEmail").value.trim().toLowerCase(), pass = document.getElementById("pPass").value.trim(), pBtn = document.getElementById("pLoginBtn");
+            if(!email || !pass) return alert("Enter Details!");
+            pBtn.innerText = "Wait...";
             try {
                 const snap = await getDoc(doc(db, "premium_users", email));
                 if(snap.exists() && snap.data().password === pass) {
                     const data = snap.data();
+                    if(Date.now() > data.expiresAt) return alert("❌ Plan Expired!"), pBtn.innerText = "Login", false;
+                    if(data.deviceId && data.deviceId !== myDevice) return alert("❌ Device Locked!"), pBtn.innerText = "Login", false;
                     
-                    // Check Expiry (28 Days)
-                    if(Date.now() > data.expiresAt) {
-                        alert("❌ Premium Plan has Expired!");
-                        pBtn.innerText = "Login & Open";
-                        return;
-                    }
-                    
-                    // Device Locking Logic
-                    if(data.deviceId && data.deviceId !== myDevice) {
-                        alert("❌ Account is already locked to another user's device! Sharing is not allowed.");
-                        pBtn.innerText = "Login & Open";
-                        return;
-                    }
-                    
-                    // First time login - bind device
-                    if(!data.deviceId) {
-                        await updateDoc(doc(db, "premium_users", email), { deviceId: myDevice });
-                    }
-                    
-                    // Success! Save session and open link
-                    localStorage.setItem("premiumUserEmail", email);
-                    localStorage.setItem("premiumUserPass", pass);
-                    isGlobalPremium = true;
-                    
-                    alert("💎 Premium Login Success! Opening Direct Link...");
-                    window.open(currentTargetLink, '_blank');
-                    closeModal();
-                } else {
-                    alert("❌ Invalid Details! Contact Admin.");
-                }
-            } catch(e) { alert("Server Error."); }
+                    if(!data.deviceId) await updateDoc(doc(db, "premium_users", email), { deviceId: myDevice });
+                    localStorage.setItem("premEmail", email); localStorage.setItem("premPass", pass);
+                    isGlobalPremium = true; window.open(currentTargetLink, '_blank'); closeModal();
+                } else alert("❌ Invalid Details!");
+            } catch(e) { alert("Error."); }
             pBtn.innerText = "Login & Open";
         };
 
-        // RENDER DETAILS PAGE
         async function loadDetail() {
             await checkAutoPremium();
             if (!animeId) return document.getElementById("detailBox").innerHTML = "<h2 style='text-align:center;'>ID Missing!</h2>";
-            
             const docSnap = await getDoc(doc(db, "anime", animeId));
+            
             if (docSnap.exists()) {
                 const a = docSnap.data();
-                const episodes = a.episodes ||[];
+                const eps = a.episodes ||[];
+                eps.sort((x, y) => String(x.ep).localeCompare(String(y.ep), undefined, {numeric: true}));
                 
-                let episodesHTML = "";
-                if(episodes.length === 0) {
-                    episodesHTML = "<p style='color:#aaa; text-align:center; width:100%;'>No episodes uploaded yet.</p>";
-                } else {
-                    episodes.forEach((ep) => {
-                        const secureCode = btoa(ep.link);
-                        episodesHTML += `<button class="ep-btn" onclick="processEpisodeClick('${secureCode}')">Episode ${ep.ep}</button>`;
-                    });
-                }
+                let epsHTML = eps.length ? eps.map(e => `<button class="ep-btn" onclick="processEpisodeClick('${btoa(e.link)}')">Episode ${e.ep}</button>`).join('') : "<p style='color:#aaa;'>No episodes uploaded.</p>";
 
                 document.getElementById("detailBox").innerHTML = `
                     <div class="detail-container">
                         <img src="${a.image}" class="detail-img">
                         <div class="detail-info">
                             <div class="info-row"><strong>Name :</strong> ${a.name}</div>
-                            <div class="info-row"><strong>Released date :</strong> ${a.year || "Unknown"}</div>
+                            <div class="info-row"><strong>Release :</strong> ${a.year || "Unknown"}</div>
                             <div class="info-row"><strong>Genre :</strong> ${a.genre || "General"}</div>
-                            <div class="info-row"><strong>Story :</strong> <div class="story-box">${a.description || "Story not available."}</div></div>
+                            <div class="info-row"><strong>Story :</strong> <div class="story-box">${a.description || "N/A"}</div></div>
                         </div>
                         <div class="episodes-box">
                             <h3>Episodes</h3>
-                            <div class="episodes-grid">${episodesHTML}</div>
+                            <div class="episodes-grid" style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center;">${epsHTML}</div>
                         </div>
-                    </div>
-                `;
-            } else {
-                document.getElementById("detailBox").innerHTML = "<h2 style='text-align:center;'>Content Not Found!</h2>";
-            }
+                    </div>`;
+            } else document.getElementById("detailBox").innerHTML = "<h2>Not Found!</h2>";
         }
-
         loadDetail();
     </script>
 </body>
