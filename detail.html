@@ -21,15 +21,16 @@
         .ep-btn:hover { background: #ff4500; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(255,69,0,0.4); }
         .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center; backdrop-filter: blur(5px); }
         .modal-box { background: #15151a; padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; border: 1px solid #ff4500; }
-        .modal-box h3 { color: white; margin-bottom: 20px; }
         .modal-btn { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; font-size: 15px; transition: 0.3s;}
         .btn-free { background: #222; color: #fff; border: 1px solid #444; }
         .btn-free:hover { background: #ff4500; border-color: #ff4500; }
+        .btn-free:disabled { opacity: 0.6; cursor: not-allowed; }
         .btn-prem { background: linear-gradient(135deg, #d4af37, #f3e5ab); color: #000; }
         .btn-prem:hover { transform: scale(1.03); box-shadow: 0 5px 15px rgba(212,175,55,0.4); }
         .login-form { display: none; background: #0a0a0c; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #333;}
         .login-form input { width: 100%; padding: 10px; margin-bottom: 10px; background: #111; border: 1px solid #444; color: white; border-radius: 5px; outline:none;}
         .login-form button { width: 100%; padding: 10px; background: #d4af37; color: #000; border: none; border-radius: 5px; font-weight: bold; cursor:pointer;}
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -61,24 +62,39 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
-        const app = initializeApp({
+        const firebaseConfig = {
             apiKey: "AIzaSyAjetcwFJR-5b8h-h5AM2j1O2xSk5srh3M",
             authDomain: "anime-sub-studio.firebaseapp.com",
             projectId: "anime-sub-studio"
-        });
+        };
+        const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const animeId = new URLSearchParams(window.location.search).get('id');
 
         let currentTargetLink = "";
         let isGlobalPremium = false;
+        
+        // 🚀 CACHING SHORTENERS FOR INSTANT GENERATION
+        let cachedShorteners = null; 
 
         let myDevice = localStorage.getItem("myDeviceId");
         if(!myDevice) { 
             myDevice = "DEV_" + Math.random().toString(36).substr(2, 9); 
             localStorage.setItem("myDeviceId", myDevice); 
         }
+
+        // Fetch settings in background silently when page loads
+        async function preLoadShorteners() {
+            try {
+                const settingsSnap = await getDoc(doc(db, "settings", "general"));
+                if (settingsSnap.exists()) {
+                    cachedShorteners = (settingsSnap.data().shorteners || []).filter(a => a.url && a.key);
+                }
+            } catch (e) { console.error("Prefetch failed"); }
+        }
+        preLoadShorteners();
 
         async function checkAutoPremium() {
             let email = localStorage.getItem("premEmail"), pass = localStorage.getItem("premPass");
@@ -87,11 +103,17 @@
                 if(snap.exists() && snap.data().password === pass) {
                     if(Date.now() < snap.data().expiresAt && snap.data().deviceId === myDevice) {
                         isGlobalPremium = true;
-                    } else {
-                        localStorage.removeItem("premEmail"); localStorage.removeItem("premPass");
                     }
                 }
             }
+        }
+
+        async function updateViewCount() {
+            if (!animeId) return;
+            try {
+                const animeRef = doc(db, "anime", animeId);
+                await updateDoc(animeRef, { views: increment(1) });
+            } catch (e) { console.error("View count error"); }
         }
 
         window.processEpisodeClick = function(secureData) {
@@ -108,75 +130,83 @@
         window.togglePremiumForm = () => document.getElementById('premiumForm').style.display = 'block';
 
         function makeUniqueUrl(original) {
-            const hashIndex = original.indexOf('#');
-            let hash = "", base = original;
-            if (hashIndex !== -1) { hash = original.substring(hashIndex); base = original.substring(0, hashIndex); }
-            const sep = base.includes('?') ? '&' : '?';
-            return base + sep + "asi_uid=" + Math.random().toString(36).substring(2,10) + hash;
+            const sep = original.includes('?') ? '&' : '?';
+            return original + sep + "v=" + Math.random().toString(36).substring(7);
         }
 
+        // 🧠 Smart API Generator (Handles Dashboard URLs automatically)
+        function formatApiUrl(inputUrl, apiKey, targetLink) {
+            try {
+                // This extracts only domain (e.g., "https://gplinks.in") ignores "/member/dashboard"
+                const urlObj = new URL(inputUrl);
+                return `${urlObj.origin}/api?api=${apiKey}&url=${encodeURIComponent(targetLink)}`;
+            } catch(e) {
+                // Fallback text cleanup if URL object fails
+                let cleanBase = inputUrl.split('/member')[0].replace(/\/$/, "");
+                return `${cleanBase}/api?api=${apiKey}&url=${encodeURIComponent(targetLink)}`;
+            }
+        }
+
+        // 🚀 EXTREME HIGH-SPEED SHORTENER GENERATOR
         window.openFreeLink = async function() {
             const btnFree = document.getElementById("btnFree");
-            btnFree.innerHTML = "Generating Link...";
+            btnFree.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+            btnFree.disabled = true; 
             
             try {
-                const snap = await getDoc(doc(db, "settings", "general"));
-                const apis = snap.exists() ? (snap.data().shorteners || []) :[];
+                // If background fetch failed, do it now
+                if (!cachedShorteners) {
+                    const snap = await getDoc(doc(db, "settings", "general"));
+                    cachedShorteners = snap.exists() ? (snap.data().shorteners || []).filter(a => a.url && a.key) : [];
+                }
                 
-                if (apis.length === 0) { 
-                    window.open(currentTargetLink, '_blank'); 
-                    closeModal(); 
-                    return; 
+                if (cachedShorteners.length === 0) { 
+                    window.open(currentTargetLink, '_blank'); closeModal(); return; 
                 }
 
-                let rawIdx = localStorage.getItem('shortIdx');
-                let storedIdx = (rawIdx && !isNaN(parseInt(rawIdx))) ? parseInt(rawIdx) : 0;
-                const randomAPI = apis[storedIdx % apis.length];
-                localStorage.setItem('shortIdx', storedIdx + 1);
+                // 🔄 Load Balancer (Round Robin on 3 accounts)
+                let idx = parseInt(localStorage.getItem('shortIdx') || "0");
+                const randomAPI = cachedShorteners[idx % cachedShorteners.length];
+                localStorage.setItem('shortIdx', idx + 1); // Next time it will use next account
 
                 const uLink = makeUniqueUrl(currentTargetLink);
-                const apiUrl = `${randomAPI.url}?api=${randomAPI.key}&url=${encodeURIComponent(uLink)}&format=text`;
+                const apiUrl = formatApiUrl(randomAPI.url, randomAPI.key, uLink);
 
-                let fLink = null;
-                
+                // ⚡ RACE CONDITION: 4 requests sent at once. First to reply wins!
+                const reqDirect = fetch(apiUrl).then(r => r.json());
+                const reqProxy1 = fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`)
+                                    .then(r => r.json())
+                                    .then(data => typeof data.contents === 'string' ? JSON.parse(data.contents) : data.contents);
+                const reqProxy2 = fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(apiUrl)}`)
+                                    .then(r => r.json());
+                const reqProxy3 = fetch(`https://corsproxy.io/?${encodeURIComponent(apiUrl)}`)
+                                    .then(r => r.json());
+
+                let shortLink = null;
+
                 try {
-                    const res = await fetch(apiUrl, { headers: { "Accept": "text/plain" } });
-                    const txt = await res.text();
-                    if(txt && txt.startsWith("http")) fLink = txt.trim();
-                } catch(e) {
-                    console.warn("Direct API call blocked, trying proxy...");
+                    // Promise.any accepts the FASTEST successful response
+                    const fastData = await Promise.any([reqDirect, reqProxy1, reqProxy2, reqProxy3]);
+                    shortLink = fastData.shortenedUrl || fastData.url || fastData.link || (fastData.status === 'success' ? fastData.shortenedUrl : null);
+                } catch (e) {
+                    console.error("All servers heavily loaded.");
                 }
 
-                if(!fLink) {
-                    try {
-                        const pRes = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`);
-                        const pTxt = await pRes.text();
-                        if(pTxt && pTxt.startsWith("http")) fLink = pTxt.trim();
-                    } catch(errProxy) {
-                        throw new Error("ProxyBlocked");
-                    }
-                }
-
-                if(fLink && fLink.startsWith("http")) {
-                    const form = document.createElement('form');
-                    form.method = "GET"; form.action = fLink; form.target = "_blank";
-                    document.body.appendChild(form); form.submit(); document.body.removeChild(form);
+                if (shortLink) {
+                    window.location.href = shortLink;
+                } else {
+                    // Fail-safe: Under extreme load if API fails, give direct link (Never lose traffic)
+                    window.open(currentTargetLink, '_blank');
                     closeModal();
-                } else { 
-                    alert("Shortener API Error: Link generate nahi ho payi. Admin panel mein API Key check karein."); 
                 }
 
             } catch (err) { 
                 console.error(err);
-                if(err.message.includes("permission") || err.message.includes("Missing")) {
-                    alert("⚠️ Firebase Error: Database ki Read Permissions band hain.");
-                } else if(err.message.includes("ProxyBlocked") || err.message.includes("Failed to fetch")) {
-                    alert("🛑 Ad-Blocker Detected! Please disable Adblocker link generate karne ke liye.");
-                } else {
-                    alert("Error: " + err.message);
-                }
+                window.open(currentTargetLink, '_blank');
+                closeModal();
             } finally { 
                 btnFree.innerHTML = '<i class="fas fa-link"></i> Solve Shortener (Free)'; 
+                btnFree.disabled = false;
             }
         };
 
@@ -188,58 +218,54 @@
                 const snap = await getDoc(doc(db, "premium_users", email));
                 if(snap.exists() && snap.data().password === pass) {
                     const data = snap.data();
-                    if(Date.now() > data.expiresAt) { alert("❌ Plan Expired!"); pBtn.innerText = "Login"; return; }
-                    if(data.deviceId && data.deviceId !== myDevice) { alert("❌ Device Locked! Sharing is not allowed."); pBtn.innerText = "Login"; return; }
+                    if(Date.now() > data.expiresAt) return alert("❌ Plan Expired!"), pBtn.innerText = "Login", false;
+                    if(data.deviceId && data.deviceId !== myDevice) return alert("❌ Device Locked!"), pBtn.innerText = "Login", false;
                     
                     if(!data.deviceId) await updateDoc(doc(db, "premium_users", email), { deviceId: myDevice });
                     localStorage.setItem("premEmail", email); localStorage.setItem("premPass", pass);
                     isGlobalPremium = true; window.open(currentTargetLink, '_blank'); closeModal();
-                } else alert("❌ Invalid Email or Password!");
-            } catch(e) { alert("Server Connection Error."); }
+                } else alert("❌ Invalid Credentials!");
+            } catch(e) { alert("Error connecting to server."); }
             pBtn.innerText = "Login & Open";
         };
 
         async function loadDetail() {
             await checkAutoPremium();
-            if (!animeId) return document.getElementById("detailBox").innerHTML = "<h2 style='text-align:center;'>ID Missing!</h2>";
+            if (!animeId) return document.getElementById("detailBox").innerHTML = "<h2>ID Missing!</h2>";
             
             try {
                 const docSnap = await getDoc(doc(db, "anime", animeId));
                 if (docSnap.exists()) {
                     const a = docSnap.data();
-                    const eps = a.episodes || [];
-                    eps.sort((x, y) => String(x.ep).localeCompare(String(y.ep), undefined, {numeric: true}));
+                    updateViewCount(); 
                     
-                    let epsHTML = "";
-                    if(eps.length === 0) {
-                        epsHTML = "<p style='color:#aaa; text-align:center; width:100%;'>No episodes uploaded yet.</p>";
-                    } else {
-                        eps.forEach(e => {
-                            const secureCode = btoa(e.link);
-                            epsHTML += `<button class="ep-btn" onclick="processEpisodeClick('${secureCode}')">Episode ${e.ep}</button>`;
-                        });
-                    }
+                    const eps = a.episodes || [];
+                    let epHtml = eps.length ? eps.map(ep => `<div class="ep-btn" onclick="processEpisodeClick('${btoa(ep.link)}')">Episode ${ep.ep}</div>`).join('') : '<p>No episodes.</p>';
 
                     document.getElementById("detailBox").innerHTML = `
                         <div class="detail-container">
-                            <img src="${a.image}" class="detail-img">
+                            <img class="detail-img" src="${a.image || ''}" alt="${a.name}">
                             <div class="detail-info">
-                                <div class="info-row"><strong>Name :</strong> ${a.name}</div>
-                                <div class="info-row"><strong>Released date :</strong> ${a.year || "Unknown"}</div>
-                                <div class="info-row"><strong>Genre :</strong> ${a.genre || "General"}</div>
-                                <div class="info-row"><strong>Story :</strong> <div class="story-box">${a.description || "Story not available."}</div></div>
+                                <div class="info-row"><strong>⭐ Name:</strong> ${a.name}</div>
+                                <div class="info-row"><strong>📅 Release:</strong> ${a.year || 'N/A'}</div>
+                                <div class="info-row"><strong>🎭 Genre:</strong> ${a.genre || 'N/A'}</div>
+                                <div class="info-row"><strong>👁️ Views:</strong> ${a.views || 0}</div>
+                                <div class="story-box"><strong>📖 Story:</strong><br>${a.description || 'No description.'}</div>
                             </div>
                             <div class="episodes-box">
-                                <h3>Episodes</h3>
-                                <div class="episodes-grid">${epsHTML}</div>
+                                <h3>📺 Episodes</h3>
+                                <div class="episodes-grid">${epHtml}</div>
                             </div>
-                        </div>`;
-                } else document.getElementById("detailBox").innerHTML = "<h2>Not Found!</h2>";
-            } catch(err) {
-                console.error(err);
-                document.getElementById("detailBox").innerHTML = "<h2 style='text-align:center;color:red;'>Database Error!</h2>";
+                        </div>
+                    `;
+                } else {
+                    document.getElementById("detailBox").innerHTML = "<h2>Not Found</h2>";
+                }
+            } catch (err) {
+                document.getElementById("detailBox").innerHTML = "<h2>Error loading.</h2>";
             }
         }
+
         loadDetail();
     </script>
 </body>
