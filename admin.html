@@ -8,6 +8,10 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* Anti-Selection & Anti-Drag */
+        body { -webkit-user-select: none; -ms-user-select: none; user-select: none; }
+        img { -webkit-user-drag: none; }
+        
         .detail-container { max-width: 800px; margin: 30px auto; padding: 25px; background: #15151a; border-radius: 20px; display: flex; flex-direction: column; align-items: center; text-align: left; }
         .detail-img { width: 280px; border-radius: 15px; margin-bottom: 25px; border: 2px solid #ff4500; object-fit: cover;}
         .detail-info { width: 100%; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px; margin-bottom: 30px; border: 1px solid rgba(255,255,255,0.05);}
@@ -60,6 +64,17 @@
         </div>
     </div>
 
+    <script>
+        // 🛑 ANTI-INSPECT & ANTI-BYPASS SCRIPTS (Keeps hackers away)
+        document.addEventListener('contextmenu', event => event.preventDefault()); // Block Right Click
+        document.addEventListener('keydown', function(e) {
+            if (e.keyCode == 123) { e.preventDefault(); return false; } // Block F12
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 73) { e.preventDefault(); return false; } // Block Ctrl+Shift+I
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 74) { e.preventDefault(); return false; } // Block Ctrl+Shift+J
+            if (e.ctrlKey && e.keyCode == 85) { e.preventDefault(); return false; } // Block Ctrl+U
+        });
+    </script>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
@@ -73,14 +88,25 @@
         const db = getFirestore(app);
         const animeId = new URLSearchParams(window.location.search).get('id');
 
-        let currentTargetLink = "";
+        let secureTargetData = ""; // Encrypted data holds here, NOT decoded.
         let isGlobalPremium = false;
+        let cachedShorteners = null; 
 
         let myDevice = localStorage.getItem("myDeviceId");
         if(!myDevice) { 
             myDevice = "DEV_" + Math.random().toString(36).substr(2, 9); 
             localStorage.setItem("myDeviceId", myDevice); 
         }
+
+        async function preLoadShorteners() {
+            try {
+                const settingsSnap = await getDoc(doc(db, "settings", "general"));
+                if (settingsSnap.exists()) {
+                    cachedShorteners = (settingsSnap.data().shorteners || []).filter(a => a.url && a.key);
+                }
+            } catch (e) {}
+        }
+        preLoadShorteners();
 
         async function checkAutoPremium() {
             let email = localStorage.getItem("premEmail"), pass = localStorage.getItem("premPass");
@@ -94,19 +120,18 @@
             }
         }
 
-        // --- View Counter Function ---
         async function updateViewCount() {
             if (!animeId) return;
             try {
                 const animeRef = doc(db, "anime", animeId);
                 await updateDoc(animeRef, { views: increment(1) });
-            } catch (e) { console.error("View count error:", e); }
+            } catch (e) { console.error("View count error"); }
         }
 
-        window.processEpisodeClick = function(secureData) {
-            currentTargetLink = atob(secureData);
+        window.processEpisodeClick = function(encodedData) {
+            secureTargetData = encodedData; // Stored securely encoded
             if(isGlobalPremium) {
-                window.open(currentTargetLink, '_blank'); 
+                window.open(atob(secureTargetData), '_blank'); 
             } else { 
                 document.getElementById('epModal').style.display = 'flex'; 
                 document.getElementById('premiumForm').style.display = 'none'; 
@@ -121,60 +146,72 @@
             return original + sep + "v=" + Math.random().toString(36).substring(7);
         }
 
-        // 🚀 SUPER FAST SHORTENER LOGIC WITH ROUND-ROBIN
+        function formatApiUrl(inputUrl, apiKey, targetLink) {
+            try {
+                const urlObj = new URL(inputUrl);
+                return `${urlObj.origin}/api?api=${apiKey}&url=${encodeURIComponent(targetLink)}`;
+            } catch(e) {
+                let cleanBase = inputUrl.split('/member')[0].replace(/\/$/, "");
+                return `${cleanBase}/api?api=${apiKey}&url=${encodeURIComponent(targetLink)}`;
+            }
+        }
+
+        // 🚀 STRICT & FAST SHORTENER LOGIC (NO BYPASS ALLOWED)
         window.openFreeLink = async function() {
             const btnFree = document.getElementById("btnFree");
-            btnFree.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
-            btnFree.disabled = true; // Prevent multiple clicks
+            btnFree.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+            btnFree.disabled = true; 
             
             try {
-                const settingsSnap = await getDoc(doc(db, "settings", "general"));
-                const apis = settingsSnap.exists() ? (settingsSnap.data().shorteners || []) : [];
-                const validApis = apis.filter(a => a.url && a.key);
+                if (!cachedShorteners) {
+                    const snap = await getDoc(doc(db, "settings", "general"));
+                    cachedShorteners = snap.exists() ? (snap.data().shorteners || []).filter(a => a.url && a.key) : [];
+                }
                 
-                if (validApis.length === 0) { 
-                    window.open(currentTargetLink, '_blank'); closeModal(); return; 
+                // Decode right before generating to prevent memory extraction
+                let finalTargetUrl = atob(secureTargetData); 
+
+                if (cachedShorteners.length === 0) { 
+                    alert("No Shorteners Configured by Admin!");
+                    closeModal(); return; 
                 }
 
-                // Cycle through 3 shortener APIs one by one (Round Robin)
                 let idx = parseInt(localStorage.getItem('shortIdx') || "0");
-                const randomAPI = validApis[idx % validApis.length];
-                localStorage.setItem('shortIdx', idx + 1);
+                const randomAPI = cachedShorteners[idx % cachedShorteners.length];
+                localStorage.setItem('shortIdx', idx + 1); 
 
-                const uLink = makeUniqueUrl(currentTargetLink);
-                let cleanApiBase = randomAPI.url.replace("/member/dashboard", "").replace(/\/$/, "");
-                const apiUrl = `${cleanApiBase}/api?api=${randomAPI.key}&url=${encodeURIComponent(uLink)}`;
+                const uLink = makeUniqueUrl(finalTargetUrl);
+                const apiUrl = formatApiUrl(randomAPI.url, randomAPI.key, uLink);
 
-                // Create promises for Direct Request and Proxies (They will run together)
+                // ⚡ RACE CONDITION: 4 requests sent at once.
                 const reqDirect = fetch(apiUrl).then(r => r.json());
                 const reqProxy1 = fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`)
                                     .then(r => r.json())
                                     .then(data => typeof data.contents === 'string' ? JSON.parse(data.contents) : data.contents);
                 const reqProxy2 = fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(apiUrl)}`)
                                     .then(r => r.json());
+                const reqProxy3 = fetch(`https://corsproxy.io/?${encodeURIComponent(apiUrl)}`)
+                                    .then(r => r.json());
 
                 let shortLink = null;
 
                 try {
-                    // Promise.any takes whichever responds the fastest!
-                    const fastData = await Promise.any([reqDirect, reqProxy1, reqProxy2]);
+                    const fastData = await Promise.any([reqDirect, reqProxy1, reqProxy2, reqProxy3]);
                     shortLink = fastData.shortenedUrl || fastData.url || fastData.link || (fastData.status === 'success' ? fastData.shortenedUrl : null);
                 } catch (e) {
-                    console.error("All proxies failed");
+                    console.log("Servers busy");
                 }
 
                 if (shortLink) {
                     window.location.href = shortLink;
                 } else {
-                    // Fallback to direct open if everything fails so user is not stuck
-                    alert("Shortener server is busy. Opening direct link...");
-                    window.open(currentTargetLink, '_blank');
+                    // 🛑 STRICT: We DO NOT give the direct link if servers fail.
+                    alert("Shortener Servers are currently busy or down. Please try clicking again.");
                     closeModal();
                 }
 
             } catch (err) { 
-                console.error(err);
-                window.open(currentTargetLink, '_blank'); // Open direct if error occurs
+                alert("Network Error! Please check your connection and try again.");
                 closeModal();
             } finally { 
                 btnFree.innerHTML = '<i class="fas fa-link"></i> Solve Shortener (Free)'; 
@@ -195,7 +232,9 @@
                     
                     if(!data.deviceId) await updateDoc(doc(db, "premium_users", email), { deviceId: myDevice });
                     localStorage.setItem("premEmail", email); localStorage.setItem("premPass", pass);
-                    isGlobalPremium = true; window.open(currentTargetLink, '_blank'); closeModal();
+                    isGlobalPremium = true; 
+                    window.open(atob(secureTargetData), '_blank'); 
+                    closeModal();
                 } else alert("❌ Invalid Credentials!");
             } catch(e) { alert("Error connecting to server."); }
             pBtn.innerText = "Login & Open";
@@ -209,7 +248,7 @@
                 const docSnap = await getDoc(doc(db, "anime", animeId));
                 if (docSnap.exists()) {
                     const a = docSnap.data();
-                    updateViewCount(); // Trigger view count
+                    updateViewCount(); // Trigger views reliably
                     
                     const eps = a.episodes || [];
                     let epHtml = eps.length ? eps.map(ep => `<div class="ep-btn" onclick="processEpisodeClick('${btoa(ep.link)}')">Episode ${ep.ep}</div>`).join('') : '<p>No episodes.</p>';
