@@ -2,282 +2,204 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <title>Admin Panel - Anime Sub Studio</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Watch Online | Anime Sub Studio</title>
-    <meta name="referrer" content="no-referrer-when-downgrade">
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
     <style>
-        /* Anti-Selection & Anti-Drag */
-        body { -webkit-user-select: none; -ms-user-select: none; user-select: none; }
-        img { -webkit-user-drag: none; }
-        
-        .detail-container { max-width: 800px; margin: 30px auto; padding: 25px; background: #15151a; border-radius: 20px; display: flex; flex-direction: column; align-items: center; text-align: left; }
-        .detail-img { width: 280px; border-radius: 15px; margin-bottom: 25px; border: 2px solid #ff4500; object-fit: cover;}
-        .detail-info { width: 100%; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px; margin-bottom: 30px; border: 1px solid rgba(255,255,255,0.05);}
-        .info-row { margin-bottom: 15px; font-size: 16px; color: #ddd; }
-        .info-row strong { color: #ff4500; margin-right: 8px;}
-        .story-box { background: #111; padding: 15px; border-radius: 8px; margin-top: 10px; color: #bbb; font-size: 15px; line-height:1.6;}
-        .episodes-box { width: 100%; }
-        .episodes-box h3 { color: white; margin-bottom: 20px; text-align: center; border-bottom: 1px solid #333; padding-bottom: 10px; }
-        .episodes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
-        .ep-btn { background: rgba(255,69,0,0.1); color: white; padding: 12px; text-align: center; border-radius: 10px; cursor: pointer; border: 1px solid rgba(255,69,0,0.3); font-weight:600;}
-        .ep-btn:hover { background: #ff4500; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(255,69,0,0.4); }
-        .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center; backdrop-filter: blur(5px); }
-        .modal-box { background: #15151a; padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; border: 1px solid #ff4500; }
-        .modal-btn { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; font-size: 15px; transition: 0.3s;}
-        .btn-free { background: #222; color: #fff; border: 1px solid #444; }
-        .btn-free:hover { background: #ff4500; border-color: #ff4500; }
-        .btn-free:disabled { opacity: 0.6; cursor: not-allowed; }
-        .btn-prem { background: linear-gradient(135deg, #d4af37, #f3e5ab); color: #000; }
-        .btn-prem:hover { transform: scale(1.03); box-shadow: 0 5px 15px rgba(212,175,55,0.4); }
-        .login-form { display: none; background: #0a0a0c; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #333;}
-        .login-form input { width: 100%; padding: 10px; margin-bottom: 10px; background: #111; border: 1px solid #444; color: white; border-radius: 5px; outline:none;}
-        .login-form button { width: 100%; padding: 10px; background: #d4af37; color: #000; border: none; border-radius: 5px; font-weight: bold; cursor:pointer;}
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f0f13; color: white; margin: 0; padding: 20px; }
+        .admin-container { max-width: 800px; margin: 0 auto; }
+        .box { background: #1c1c24; padding: 25px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #333; }
+        h3 { margin-top: 0; color: #ff4500; border-bottom: 2px solid #333; padding-bottom: 10px;}
+        input, select, textarea { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #333; background: #121216; color: white; border-radius: 5px; box-sizing: border-box;}
+        button { width: 100%; padding: 12px; background: #ff4500; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .ep-list { max-height: 200px; overflow-y: auto; margin-top:10px;}
+        .ep-item { display: flex; justify-content: space-between; background: #111; padding: 10px; margin-bottom: 5px; border-left: 3px solid #ff4500; }
     </style>
 </head>
 <body>
-    <header><a href="index.html" class="logo" style="text-decoration:none;font-size:24px;font-weight:bold;color:white;">Anime Sub <span style="color:#ff4500;">Studio</span></a></header>
-    <a href="index.html" style="display:inline-block; margin:20px; color:white; background:#222; padding:8px 15px; border-radius:10px; text-decoration:none;"><i class="fas fa-arrow-left"></i> Back to Home</a>
+<div class="admin-container">
+    <h2 style="text-align:center; color: #ff4500;">🔥 Admin Panel</h2>
 
-    <div id="detailBox">
-        <div style="text-align:center; margin-top:50px;">
-            <div style="border: 4px solid #333; border-top: 4px solid #ff4500; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 10px;"></div>
-            <h3 style="color:#ff4500;">Loading...</h3>
-        </div>
+    <div class="box" id="loginBox">
+        <h3>🔐 Login</h3>
+        <input type="email" id="adminEmail" placeholder="Email">
+        <input type="password" id="adminPass" placeholder="Password">
+        <button id="loginBtn">🚀 Login</button>
     </div>
 
-    <!-- POPUP MODAL -->
-    <div id="epModal" class="modal-overlay">
-        <div class="modal-box">
-            <h3>Select Action</h3>
-            <button class="modal-btn btn-free" id="btnFree" onclick="openFreeLink()"><i class="fas fa-link"></i> Solve Shortener (Free)</button>
-            <button class="modal-btn btn-prem" onclick="togglePremiumForm()"><i class="fas fa-gem"></i> Premium Direct Link</button>
-            
-            <div id="premiumForm" class="login-form">
-                <input type="email" id="pEmail" placeholder="Premium Email">
-                <input type="password" id="pPass" placeholder="Password">
-                <button id="pLoginBtn" onclick="loginAndOpenPremium()">Login & Open</button>
+    <div id="adminPanel" style="display:none">
+        <button id="logoutBtn" style="background:#333; margin-bottom:15px; width:auto; padding:8px 20px;">🚪 Logout</button>
+
+        <!-- ADD ANIME / MOVIES -->
+        <div class="box">
+            <h3>🎬 Add New Content</h3>
+            <input id="newName" placeholder="Name">
+            <div class="grid-2">
+                <input id="newYear" placeholder="Release Date">
+                <input id="newGenre" placeholder="Genre">
             </div>
-            <button onclick="closeModal()" style="margin-top:10px; background:transparent; color:#aaa; border:none; cursor:pointer;"><u>Cancel</u></button>
+            <!-- DIRECT TYPE BOX -->
+            <input id="newType" placeholder="Type (e.g. Cartoon, Anime, K-Drama)">
+            <textarea id="newDesc" rows="3" placeholder="Story"></textarea>
+            <button id="uploadImgBtn" type="button" style="background:#1e5f8e; margin-bottom:10px;">🖼️ Upload Image</button>
+            <img id="imgPreview" style="max-width: 140px; display:none; margin: 0 auto 10px;">
+            <button id="addAnimeBtn">➕ Save Content</button>
+        </div>
+
+        <!-- EPISODES (WITH SEARCH BOX) -->
+        <div class="box">
+            <h3>📺 Episode Management</h3>
+            <input type="text" id="epSearch" placeholder="🔍 Search Content...">
+            <select id="animeSelect"><option value="">-- Select Content --</option></select>
+            <div class="grid-2">
+                <input id="epNum" placeholder="Episode No. (e.g. 01, 01-05)">
+                <input id="epLink" placeholder="Original Link">
+            </div>
+            <button id="addEpBtn">➕ Add Episode</button>
+            <div id="episodesContainer" class="ep-list"></div>
+        </div>
+
+        <!-- PREMIUM SYSTEM -->
+        <div class="box" style="border-color:#d4af37;">
+            <h3 style="color:#d4af37;">💎 Add Premium User (28 Days)</h3>
+            <div class="grid-2">
+                <input id="premiumEmail" placeholder="User Gmail">
+                <input id="premiumPass" placeholder="Create Password">
+            </div>
+            <button id="addPremiumBtn" style="background: #d4af37; color:#000;">⭐ Activate User</button>
+            <p id="premiumMsg" style="color:#d4af37; text-align:center; margin-top:10px;"></p>
+        </div>
+
+        <!-- 3 SHORTENERS SUPPORT -->
+        <div class="box">
+            <h3>🔗 Multi-Shortener (3 APIs)</h3>
+            <div class="grid-2">
+                <input id="s1Url" placeholder="API 1 URL (e.g. link.in/api)">
+                <input id="s1Key" placeholder="API 1 Key">
+                <input id="s2Url" placeholder="API 2 URL">
+                <input id="s2Key" placeholder="API 2 Key">
+                <input id="s3Url" placeholder="API 3 URL">
+                <input id="s3Key" placeholder="API 3 Key">
+            </div>
+            <button id="saveShortBtn">💾 Save APIs</button>
+        </div>
+
+        <!-- DELETE PERMANENTLY -->
+        <div class="box">
+            <h3>🗑️ Delete</h3>
+            <select id="deleteSelect"><option value="">Select to Delete</option></select>
+            <button id="deleteAnimeBtn" style="background: #b71c1c;">🔥 Delete Permanently</button>
         </div>
     </div>
+</div>
 
-    <script>
-        // 🛑 ANTI-INSPECT & ANTI-BYPASS SCRIPTS (Keeps hackers away)
-        document.addEventListener('contextmenu', event => event.preventDefault()); // Block Right Click
-        document.addEventListener('keydown', function(e) {
-            if (e.keyCode == 123) { e.preventDefault(); return false; } // Block F12
-            if (e.ctrlKey && e.shiftKey && e.keyCode == 73) { e.preventDefault(); return false; } // Block Ctrl+Shift+I
-            if (e.ctrlKey && e.shiftKey && e.keyCode == 74) { e.preventDefault(); return false; } // Block Ctrl+Shift+J
-            if (e.ctrlKey && e.keyCode == 85) { e.preventDefault(); return false; } // Block Ctrl+U
-        });
-    </script>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDoc, getDocs, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, setDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+    const app = initializeApp({ apiKey: "AIzaSyAjetcwFJR-5b8h-h5AM2j1O2xSk5srh3M", authDomain: "anime-sub-studio.firebaseapp.com", projectId: "anime-sub-studio" });
+    const db = getFirestore(app), auth = getAuth(app);
+    let uploadedImage = "", selectedAnimeId = "";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAjetcwFJR-5b8h-h5AM2j1O2xSk5srh3M",
-            authDomain: "anime-sub-studio.firebaseapp.com",
-            projectId: "anime-sub-studio"
-        };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const animeId = new URLSearchParams(window.location.search).get('id');
+    // Auth State Check
+    onAuthStateChanged(auth, user => {
+        if(user) { document.getElementById("adminPanel").style.display="block"; document.getElementById("loginBox").style.display="none"; loadList(); loadSettings(); }
+        else { document.getElementById("adminPanel").style.display="none"; document.getElementById("loginBox").style.display="block"; }
+    });
 
-        let secureTargetData = ""; // Encrypted data holds here, NOT decoded.
-        let isGlobalPremium = false;
-        let cachedShorteners = null; 
+    document.getElementById("loginBtn").onclick = () => signInWithEmailAndPassword(auth, document.getElementById("adminEmail").value, document.getElementById("adminPass").value).catch(()=>alert("Login Failed!"));
+    document.getElementById("logoutBtn").onclick = () => signOut(auth);
 
-        let myDevice = localStorage.getItem("myDeviceId");
-        if(!myDevice) { 
-            myDevice = "DEV_" + Math.random().toString(36).substr(2, 9); 
-            localStorage.setItem("myDeviceId", myDevice); 
+    // Search Content Dropdown
+    document.getElementById("epSearch").addEventListener("input", e => {
+        const term = e.target.value.toLowerCase(), opts = document.getElementById("animeSelect").options;
+        for(let i=1; i<opts.length; i++) opts[i].style.display = opts[i].text.toLowerCase().includes(term) ? "block" : "none";
+    });
+
+    // Add Premium User Logic
+    document.getElementById("addPremiumBtn").onclick = async () => {
+        const email = document.getElementById("premiumEmail").value.trim().toLowerCase(), pass = document.getElementById("premiumPass").value.trim();
+        if(!email || !pass) return alert("Enter Details!");
+        await setDoc(doc(db, "premium_users", email), { password: pass, expiresAt: Date.now() + (28 * 24 * 60 * 60 * 1000), deviceId: null });
+        document.getElementById("premiumMsg").innerText = `✅ Premium User Created!`;
+        document.getElementById("premiumEmail").value = ""; document.getElementById("premiumPass").value = "";
+    };
+
+    // Load Shortener Settings
+    async function loadSettings() {
+        const snap = await getDoc(doc(db, "settings", "general"));
+        if(snap.exists() && snap.data().shorteners) {
+            const apis = snap.data().shorteners;
+            if(apis[0]) { document.getElementById("s1Url").value = apis[0].url; document.getElementById("s1Key").value = apis[0].key; }
+            if(apis[1]) { document.getElementById("s2Url").value = apis[1].url; document.getElementById("s2Key").value = apis[1].key; }
+            if(apis[2]) { document.getElementById("s3Url").value = apis[2].url; document.getElementById("s3Key").value = apis[2].key; }
         }
+    }
 
-        async function preLoadShorteners() {
-            try {
-                const settingsSnap = await getDoc(doc(db, "settings", "general"));
-                if (settingsSnap.exists()) {
-                    cachedShorteners = (settingsSnap.data().shorteners || []).filter(a => a.url && a.key);
-                }
-            } catch (e) {}
+    // Save 3 Shorteners
+    document.getElementById("saveShortBtn").onclick = async () => {
+        let apis =[];
+        for(let i=1; i<=3; i++) {
+            let u = document.getElementById(`s${i}Url`).value.trim(), k = document.getElementById(`s${i}Key`).value.trim();
+            if(u && k) apis.push({url: u.endsWith("/api") ? u : u+"/api", key: k});
         }
-        preLoadShorteners();
+        await setDoc(doc(db, "settings", "general"), { shorteners: apis }, {merge:true}); alert("APIs Saved!");
+    };
 
-        async function checkAutoPremium() {
-            let email = localStorage.getItem("premEmail"), pass = localStorage.getItem("premPass");
-            if(email && pass) {
-                const snap = await getDoc(doc(db, "premium_users", email));
-                if(snap.exists() && snap.data().password === pass) {
-                    if(Date.now() < snap.data().expiresAt && snap.data().deviceId === myDevice) {
-                        isGlobalPremium = true;
-                    }
-                }
-            }
-        }
+    // Cloudinary Upload
+    document.getElementById("uploadImgBtn").onclick = () => {
+        cloudinary.createUploadWidget({ cloudName: "dccbzyjtr", uploadPreset: "asi_anime_upload", multiple: false }, (err, res) => {
+            if (!err && res.event === "success") { uploadedImage = res.info.secure_url; document.getElementById("imgPreview").src = uploadedImage; document.getElementById("imgPreview").style.display = "block"; }
+        }).open();
+    };
 
-        async function updateViewCount() {
-            if (!animeId) return;
-            try {
-                const animeRef = doc(db, "anime", animeId);
-                await updateDoc(animeRef, { views: increment(1) });
-            } catch (e) { console.error("View count error"); }
-        }
+    // Save Post/Anime
+    document.getElementById("addAnimeBtn").onclick = async () => {
+        const name = document.getElementById("newName").value, type = document.getElementById("newType").value.trim() || "Anime"; 
+        if(!name || !uploadedImage) return alert("Name & Image required!");
+        await addDoc(collection(db, "anime"), { name, year: document.getElementById("newYear").value, genre: document.getElementById("newGenre").value, type, description: document.getElementById("newDesc").value, image: uploadedImage, episodes:[], updatedAt: Date.now() });
+        alert("Saved!"); loadList();
+    };
 
-        window.processEpisodeClick = function(encodedData) {
-            secureTargetData = encodedData; // Stored securely encoded
-            if(isGlobalPremium) {
-                window.open(atob(secureTargetData), '_blank'); 
-            } else { 
-                document.getElementById('epModal').style.display = 'flex'; 
-                document.getElementById('premiumForm').style.display = 'none'; 
-            }
-        };
+    // Load Dropdowns
+    async function loadList() {
+        const snap = await getDocs(collection(db, "anime")), sel = document.getElementById("animeSelect"), dsel = document.getElementById("deleteSelect");
+        sel.innerHTML = '<option value="">-- Select Content --</option>'; dsel.innerHTML = '<option value="">-- Select --</option>';
+        snap.forEach(d => { let opt = `<option value="${d.id}">${d.data().name} (${d.data().type})</option>`; sel.innerHTML += opt; dsel.innerHTML += opt; });
+    }
 
-        window.closeModal = () => document.getElementById('epModal').style.display = 'none';
-        window.togglePremiumForm = () => document.getElementById('premiumForm').style.display = 'block';
+    // Select Anime -> Load Episodes
+    document.getElementById("animeSelect").onchange = e => { selectedAnimeId = e.target.value; fetchEpisodes(); };
 
-        function makeUniqueUrl(original) {
-            const sep = original.includes('?') ? '&' : '?';
-            return original + sep + "v=" + Math.random().toString(36).substring(7);
-        }
+    async function fetchEpisodes() {
+        if(!selectedAnimeId) return;
+        const snap = await getDoc(doc(db, "anime", selectedAnimeId)), eps = snap.data().episodes ||[];
+        document.getElementById("episodesContainer").innerHTML = eps.map(ep => `<div class="ep-item"><span>Ep: ${ep.ep}</span><button onclick="deleteEp('${ep.ep}', '${btoa(ep.link)}')" style="background:red; width:auto; padding:5px 15px;">Del</button></div>`).join('');
+    }
 
-        function formatApiUrl(inputUrl, apiKey, targetLink) {
-            try {
-                const urlObj = new URL(inputUrl);
-                return `${urlObj.origin}/api?api=${apiKey}&url=${encodeURIComponent(targetLink)}`;
-            } catch(e) {
-                let cleanBase = inputUrl.split('/member')[0].replace(/\/$/, "");
-                return `${cleanBase}/api?api=${apiKey}&url=${encodeURIComponent(targetLink)}`;
-            }
-        }
+    // Delete Episode function
+    window.deleteEp = async (epNum, secureLink) => {
+        await updateDoc(doc(db, "anime", selectedAnimeId), { episodes: arrayRemove({ep: epNum, link: atob(secureLink)}) });
+        fetchEpisodes();
+    };
 
-        // 🚀 STRICT & FAST SHORTENER LOGIC (NO BYPASS ALLOWED)
-        window.openFreeLink = async function() {
-            const btnFree = document.getElementById("btnFree");
-            btnFree.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
-            btnFree.disabled = true; 
-            
-            try {
-                if (!cachedShorteners) {
-                    const snap = await getDoc(doc(db, "settings", "general"));
-                    cachedShorteners = snap.exists() ? (snap.data().shorteners || []).filter(a => a.url && a.key) : [];
-                }
-                
-                // Decode right before generating to prevent memory extraction
-                let finalTargetUrl = atob(secureTargetData); 
+    // Add Episode
+    document.getElementById("addEpBtn").onclick = async () => {
+        if(!selectedAnimeId) return alert("Select anime first!");
+        const epNum = document.getElementById("epNum").value.trim(), link = document.getElementById("epLink").value.trim();
+        if(!epNum || !link) return alert("Required!");
+        await updateDoc(doc(db, "anime", selectedAnimeId), { episodes: arrayUnion({ ep: epNum, link: link }), updatedAt: Date.now() });
+        document.getElementById("epLink").value = "";
+        alert("Added!"); fetchEpisodes();
+    };
 
-                if (cachedShorteners.length === 0) { 
-                    alert("No Shorteners Configured by Admin!");
-                    closeModal(); return; 
-                }
-
-                let idx = parseInt(localStorage.getItem('shortIdx') || "0");
-                const randomAPI = cachedShorteners[idx % cachedShorteners.length];
-                localStorage.setItem('shortIdx', idx + 1); 
-
-                const uLink = makeUniqueUrl(finalTargetUrl);
-                const apiUrl = formatApiUrl(randomAPI.url, randomAPI.key, uLink);
-
-                // ⚡ RACE CONDITION: 4 requests sent at once.
-                const reqDirect = fetch(apiUrl).then(r => r.json());
-                const reqProxy1 = fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`)
-                                    .then(r => r.json())
-                                    .then(data => typeof data.contents === 'string' ? JSON.parse(data.contents) : data.contents);
-                const reqProxy2 = fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(apiUrl)}`)
-                                    .then(r => r.json());
-                const reqProxy3 = fetch(`https://corsproxy.io/?${encodeURIComponent(apiUrl)}`)
-                                    .then(r => r.json());
-
-                let shortLink = null;
-
-                try {
-                    const fastData = await Promise.any([reqDirect, reqProxy1, reqProxy2, reqProxy3]);
-                    shortLink = fastData.shortenedUrl || fastData.url || fastData.link || (fastData.status === 'success' ? fastData.shortenedUrl : null);
-                } catch (e) {
-                    console.log("Servers busy");
-                }
-
-                if (shortLink) {
-                    window.location.href = shortLink;
-                } else {
-                    // 🛑 STRICT: We DO NOT give the direct link if servers fail.
-                    alert("Shortener Servers are currently busy or down. Please try clicking again.");
-                    closeModal();
-                }
-
-            } catch (err) { 
-                alert("Network Error! Please check your connection and try again.");
-                closeModal();
-            } finally { 
-                btnFree.innerHTML = '<i class="fas fa-link"></i> Solve Shortener (Free)'; 
-                btnFree.disabled = false;
-            }
-        };
-
-        window.loginAndOpenPremium = async function() {
-            const email = document.getElementById("pEmail").value.trim().toLowerCase(), pass = document.getElementById("pPass").value.trim(), pBtn = document.getElementById("pLoginBtn");
-            if(!email || !pass) return alert("Enter Details!");
-            pBtn.innerText = "Wait...";
-            try {
-                const snap = await getDoc(doc(db, "premium_users", email));
-                if(snap.exists() && snap.data().password === pass) {
-                    const data = snap.data();
-                    if(Date.now() > data.expiresAt) return alert("❌ Plan Expired!"), pBtn.innerText = "Login", false;
-                    if(data.deviceId && data.deviceId !== myDevice) return alert("❌ Device Locked!"), pBtn.innerText = "Login", false;
-                    
-                    if(!data.deviceId) await updateDoc(doc(db, "premium_users", email), { deviceId: myDevice });
-                    localStorage.setItem("premEmail", email); localStorage.setItem("premPass", pass);
-                    isGlobalPremium = true; 
-                    window.open(atob(secureTargetData), '_blank'); 
-                    closeModal();
-                } else alert("❌ Invalid Credentials!");
-            } catch(e) { alert("Error connecting to server."); }
-            pBtn.innerText = "Login & Open";
-        };
-
-        async function loadDetail() {
-            await checkAutoPremium();
-            if (!animeId) return document.getElementById("detailBox").innerHTML = "<h2>ID Missing!</h2>";
-            
-            try {
-                const docSnap = await getDoc(doc(db, "anime", animeId));
-                if (docSnap.exists()) {
-                    const a = docSnap.data();
-                    updateViewCount(); // Trigger views reliably
-                    
-                    const eps = a.episodes || [];
-                    let epHtml = eps.length ? eps.map(ep => `<div class="ep-btn" onclick="processEpisodeClick('${btoa(ep.link)}')">Episode ${ep.ep}</div>`).join('') : '<p>No episodes.</p>';
-
-                    document.getElementById("detailBox").innerHTML = `
-                        <div class="detail-container">
-                            <img class="detail-img" src="${a.image || ''}" alt="${a.name}">
-                            <div class="detail-info">
-                                <div class="info-row"><strong>⭐ Name:</strong> ${a.name}</div>
-                                <div class="info-row"><strong>📅 Release:</strong> ${a.year || 'N/A'}</div>
-                                <div class="info-row"><strong>🎭 Genre:</strong> ${a.genre || 'N/A'}</div>
-                                <div class="info-row"><strong>👁️ Views:</strong> ${a.views || 0}</div>
-                                <div class="story-box"><strong>📖 Story:</strong><br>${a.description || 'No description.'}</div>
-                            </div>
-                            <div class="episodes-box">
-                                <h3>📺 Episodes</h3>
-                                <div class="episodes-grid">${epHtml}</div>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    document.getElementById("detailBox").innerHTML = "<h2>Not Found</h2>";
-                }
-            } catch (err) {
-                document.getElementById("detailBox").innerHTML = "<h2>Error loading.</h2>";
-            }
-        }
-
-        loadDetail();
-    </script>
+    // Delete Anime entirely
+    document.getElementById("deleteAnimeBtn").onclick = async () => {
+        const id = document.getElementById("deleteSelect").value;
+        if(id && confirm("Delete completely?")) { await deleteDoc(doc(db, "anime", id)); alert("Deleted!"); loadList(); }
+    };
+</script>
 </body>
 </html>
