@@ -8,6 +8,10 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* Anti-Selection & Anti-Drag */
+        body { -webkit-user-select: none; -ms-user-select: none; user-select: none; }
+        img { -webkit-user-drag: none; }
+        
         .detail-container { max-width: 800px; margin: 30px auto; padding: 25px; background: #15151a; border-radius: 20px; display: flex; flex-direction: column; align-items: center; text-align: left; }
         .detail-img { width: 280px; border-radius: 15px; margin-bottom: 25px; border: 2px solid #ff4500; object-fit: cover;}
         .detail-info { width: 100%; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px; margin-bottom: 30px; border: 1px solid rgba(255,255,255,0.05);}
@@ -60,6 +64,17 @@
         </div>
     </div>
 
+    <script>
+        // 🛑 ANTI-INSPECT & ANTI-BYPASS SCRIPTS (Keeps hackers away)
+        document.addEventListener('contextmenu', event => event.preventDefault()); // Block Right Click
+        document.addEventListener('keydown', function(e) {
+            if (e.keyCode == 123) { e.preventDefault(); return false; } // Block F12
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 73) { e.preventDefault(); return false; } // Block Ctrl+Shift+I
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 74) { e.preventDefault(); return false; } // Block Ctrl+Shift+J
+            if (e.ctrlKey && e.keyCode == 85) { e.preventDefault(); return false; } // Block Ctrl+U
+        });
+    </script>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
@@ -73,10 +88,8 @@
         const db = getFirestore(app);
         const animeId = new URLSearchParams(window.location.search).get('id');
 
-        let currentTargetLink = "";
+        let secureTargetData = ""; 
         let isGlobalPremium = false;
-        
-        // 🚀 CACHING SHORTENERS FOR INSTANT GENERATION
         let cachedShorteners = null; 
 
         let myDevice = localStorage.getItem("myDeviceId");
@@ -85,14 +98,13 @@
             localStorage.setItem("myDeviceId", myDevice); 
         }
 
-        // Fetch settings in background silently when page loads
         async function preLoadShorteners() {
             try {
                 const settingsSnap = await getDoc(doc(db, "settings", "general"));
                 if (settingsSnap.exists()) {
                     cachedShorteners = (settingsSnap.data().shorteners || []).filter(a => a.url && a.key);
                 }
-            } catch (e) { console.error("Prefetch failed"); }
+            } catch (e) {}
         }
         preLoadShorteners();
 
@@ -113,13 +125,16 @@
             try {
                 const animeRef = doc(db, "anime", animeId);
                 await updateDoc(animeRef, { views: increment(1) });
-            } catch (e) { console.error("View count error"); }
+            } catch (e) {}
         }
 
-        window.processEpisodeClick = function(secureData) {
-            currentTargetLink = atob(secureData);
+        window.processEpisodeClick = function(encodedData) {
+            secureTargetData = encodedData; 
             if(isGlobalPremium) {
-                window.open(currentTargetLink, '_blank'); 
+                let directLink = atob(secureTargetData);
+                // Fix missing https:// for direct links too
+                if (!directLink.startsWith("http")) directLink = "https://" + directLink;
+                window.open(directLink, '_blank'); 
             } else { 
                 document.getElementById('epModal').style.display = 'flex'; 
                 document.getElementById('premiumForm').style.display = 'none'; 
@@ -134,45 +149,43 @@
             return original + sep + "v=" + Math.random().toString(36).substring(7);
         }
 
-        // 🧠 Smart API Generator (Handles Dashboard URLs automatically)
         function formatApiUrl(inputUrl, apiKey, targetLink) {
             try {
-                // This extracts only domain (e.g., "https://gplinks.in") ignores "/member/dashboard"
                 const urlObj = new URL(inputUrl);
                 return `${urlObj.origin}/api?api=${apiKey}&url=${encodeURIComponent(targetLink)}`;
             } catch(e) {
-                // Fallback text cleanup if URL object fails
                 let cleanBase = inputUrl.split('/member')[0].replace(/\/$/, "");
                 return `${cleanBase}/api?api=${apiKey}&url=${encodeURIComponent(targetLink)}`;
             }
         }
 
-        // 🚀 EXTREME HIGH-SPEED SHORTENER GENERATOR
         window.openFreeLink = async function() {
             const btnFree = document.getElementById("btnFree");
             btnFree.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
             btnFree.disabled = true; 
             
             try {
-                // If background fetch failed, do it now
                 if (!cachedShorteners) {
                     const snap = await getDoc(doc(db, "settings", "general"));
                     cachedShorteners = snap.exists() ? (snap.data().shorteners || []).filter(a => a.url && a.key) : [];
                 }
                 
+                let finalTargetUrl = atob(secureTargetData); 
+                // Agar target link mein galti se https nahi lagaya, toh laga do
+                if (!finalTargetUrl.startsWith("http")) finalTargetUrl = "https://" + finalTargetUrl;
+
                 if (cachedShorteners.length === 0) { 
-                    window.open(currentTargetLink, '_blank'); closeModal(); return; 
+                    alert("No Shorteners Configured by Admin!");
+                    closeModal(); return; 
                 }
 
-                // 🔄 Load Balancer (Round Robin on 3 accounts)
                 let idx = parseInt(localStorage.getItem('shortIdx') || "0");
                 const randomAPI = cachedShorteners[idx % cachedShorteners.length];
-                localStorage.setItem('shortIdx', idx + 1); // Next time it will use next account
+                localStorage.setItem('shortIdx', idx + 1); 
 
-                const uLink = makeUniqueUrl(currentTargetLink);
+                const uLink = makeUniqueUrl(finalTargetUrl);
                 const apiUrl = formatApiUrl(randomAPI.url, randomAPI.key, uLink);
 
-                // ⚡ RACE CONDITION: 4 requests sent at once. First to reply wins!
                 const reqDirect = fetch(apiUrl).then(r => r.json());
                 const reqProxy1 = fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`)
                                     .then(r => r.json())
@@ -185,24 +198,25 @@
                 let shortLink = null;
 
                 try {
-                    // Promise.any accepts the FASTEST successful response
                     const fastData = await Promise.any([reqDirect, reqProxy1, reqProxy2, reqProxy3]);
                     shortLink = fastData.shortenedUrl || fastData.url || fastData.link || (fastData.status === 'success' ? fastData.shortenedUrl : null);
                 } catch (e) {
-                    console.error("All servers heavily loaded.");
+                    console.log("Servers busy");
                 }
 
                 if (shortLink) {
+                    // 🔥 GITHUB 404 FIX: Yahan check kar rahe hain ki Adrinolinks ne https bheja ya nahi
+                    if (!shortLink.startsWith("http")) {
+                        shortLink = "https://" + shortLink;
+                    }
                     window.location.href = shortLink;
                 } else {
-                    // Fail-safe: Under extreme load if API fails, give direct link (Never lose traffic)
-                    window.open(currentTargetLink, '_blank');
+                    alert("Shortener Servers are currently busy or down. Please try clicking again.");
                     closeModal();
                 }
 
             } catch (err) { 
-                console.error(err);
-                window.open(currentTargetLink, '_blank');
+                alert("Network Error! Please check your connection and try again.");
                 closeModal();
             } finally { 
                 btnFree.innerHTML = '<i class="fas fa-link"></i> Solve Shortener (Free)'; 
@@ -223,7 +237,12 @@
                     
                     if(!data.deviceId) await updateDoc(doc(db, "premium_users", email), { deviceId: myDevice });
                     localStorage.setItem("premEmail", email); localStorage.setItem("premPass", pass);
-                    isGlobalPremium = true; window.open(currentTargetLink, '_blank'); closeModal();
+                    isGlobalPremium = true; 
+                    
+                    let directLink = atob(secureTargetData);
+                    if (!directLink.startsWith("http")) directLink = "https://" + directLink;
+                    window.open(directLink, '_blank'); 
+                    closeModal();
                 } else alert("❌ Invalid Credentials!");
             } catch(e) { alert("Error connecting to server."); }
             pBtn.innerText = "Login & Open";
