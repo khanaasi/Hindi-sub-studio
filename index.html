@@ -14,23 +14,63 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <!-- Sidebar Ke Naye Design Ke Liye Thoda CSS -->
+    <!-- Sidebar aur Tree Dots ke liye Special CSS -->
     <style>
-        .sidebar-heading { color: #ff4500; font-size: 16px; margin: 20px 0 10px; border-bottom: 1px solid #333; padding-bottom: 5px; font-weight: bold;}
+        /* Sidebar (Tree Dots Menu) ko chhipane (hide) aur design karne ka code */
+        .sidebar {
+            height: 100%;
+            width: 0; /* Default width 0, matlab hide rahega */
+            position: fixed;
+            z-index: 2000;
+            top: 0;
+            left: 0;
+            background-color: #111; /* Dark background */
+            overflow-x: hidden;
+            transition: 0.4s; /* Smooth open animation */
+            padding-top: 60px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+        }
+        .sidebar-content { padding: 0 20px 30px 20px; }
+        .sidebar .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 35px;
+            color: #fff;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+        .sidebar .close-btn:hover { color: #ff4500; }
+        
+        /* Overlay (Black shadow jab menu open ho) */
+        #overlay {
+            display: none;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            background-color: rgba(0,0,0,0.7);
+            z-index: 1500;
+            cursor: pointer;
+        }
+
+        /* Options Design */
+        .sidebar-heading { color: #ff4500; font-size: 16px; margin: 25px 0 10px; border-bottom: 1px solid #333; padding-bottom: 5px; font-weight: bold;}
         .sidebar-btn-group { display: flex; flex-wrap: wrap; gap: 8px; }
-        .sidebar-item { background: #222; color: white; border: 1px solid #444; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: 0.3s; }
+        .sidebar-item { background: #222; color: white; border: 1px solid #444; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 13px; transition: 0.3s; }
         .sidebar-item:hover, .sidebar-item.active { background: #ff4500; border-color: #ff4500; }
-        .reset-btn { width: 100%; background: #ff4500; color: white; border: none; padding: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .reset-btn { width: 100%; background: #ff4500; color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 15px;}
     </style>
 </head>
 <body>
 
-    <!-- SIDEBAR (Tree Dots Menu) -->
+    <!-- SIDEBAR (Tree Dots Menu Jo Andar Chhipa Rahega) -->
     <div id="sidebar" class="sidebar">
         <a href="javascript:void(0)" class="close-btn" onclick="closeNav()">&times;</a>
-        <div class="sidebar-content" style="padding: 15px;">
+        <div class="sidebar-content">
             
-            <button onclick="resetAllFilters()" class="reset-btn"><i class="fas fa-home"></i> Show All Content</button>
+            <button onclick="resetAllFilters()" class="reset-btn"><i class="fas fa-home"></i> Home (Show All)</button>
 
             <!-- 1. Category Section -->
             <h3 class="sidebar-heading"><i class="fas fa-list"></i> Category</h3>
@@ -46,8 +86,10 @@
             
         </div>
     </div>
+    <!-- Overlay -->
     <div id="overlay" onclick="closeNav()"></div>
 
+    <!-- HEADER (Navigation Bar) -->
     <header>
         <div class="header-left">
             <span class="menu-icon" onclick="openNav()" style="font-size:24px; cursor:pointer; color:white;"><i class="fas fa-bars"></i></span>
@@ -60,7 +102,7 @@
     </header>
 
     <!-- Main Anime List Container -->
-    <main id="animeList" class="anime-list" style="margin-top: 20px;">
+    <main id="animeList" class="anime-list" style="margin-top: 30px;">
         <div class="loader-container">
             <div class="loader" style="border: 4px solid #333; border-top: 4px solid #ff4500; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 10px;"></div>
             <h3 style="color:#ff4500;">Loading...</h3>
@@ -71,6 +113,7 @@
         <a href="https://t.me/hindisubinganime" target="_blank" class="btn-tg"><i class="fab fa-telegram"></i> Free Channel</a>
     </div>
 
+    <!-- Firebase Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
@@ -83,15 +126,24 @@
         const db = getFirestore(app);
 
         let allAnime = [];
-        
-        // Filter States
         let currentCategory = "all";
         let currentGenre = "all";
         let currentLetter = "all";
         let currentSearch = "";
 
-        window.openNav = () => { document.getElementById("sidebar").style.width = "280px"; document.getElementById("overlay").style.display = "block"; }
-        window.closeNav = () => { document.getElementById("sidebar").style.width = "0"; document.getElementById("overlay").style.display = "none"; }
+        // Open Sidebar Logic
+        window.openNav = () => { 
+            document.getElementById("sidebar").style.width = "300px"; 
+            document.getElementById("overlay").style.display = "block"; 
+            document.body.style.overflow = "hidden"; // background scroll band karne ke liye
+        }
+        
+        // Close Sidebar Logic
+        window.closeNav = () => { 
+            document.getElementById("sidebar").style.width = "0"; 
+            document.getElementById("overlay").style.display = "none"; 
+            document.body.style.overflow = "auto";
+        }
 
         async function loadAnime() {
             try {
@@ -104,14 +156,11 @@
                     const data = d.data();
                     allAnime.push({ id: d.id, ...data });
                     
-                    // Collect Categories
                     if(data.type && data.type.trim() !== "") {
                         uniqueCategories.add(data.type.trim());
                     }
                     
-                    // Collect Genres (Action, Comedy, etc.)
                     if(data.genre) {
-                        // Agar admin panel comma lagakar genre daalta hai (eg: "Action, Comedy")
                         let genresArray = data.genre.split(',');
                         genresArray.forEach(g => {
                             if(g.trim() !== "") uniqueGenres.add(g.trim());
@@ -121,7 +170,7 @@
                 
                 allAnime.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
                 
-                // --- 1. Populate Category (Type) in Sidebar ---
+                // Add Categories to Sidebar
                 const catBox = document.getElementById("sidebar-categories");
                 uniqueCategories.forEach(cat => {
                     let btn = document.createElement("button");
@@ -131,7 +180,7 @@
                     catBox.appendChild(btn);
                 });
 
-                // --- 2. Populate Genre in Sidebar ---
+                // Add Genres to Sidebar
                 const genreBox = document.getElementById("sidebar-genres");
                 uniqueGenres.forEach(genre => {
                     let btn = document.createElement("button");
@@ -141,7 +190,7 @@
                     genreBox.appendChild(btn);
                 });
 
-                // --- 3. Populate A-Z & 0-9 in Sidebar ---
+                // Add A-Z Directory
                 const azBox = document.getElementById("az-alphabet-box");
                 "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('').forEach(letter => {
                     let btn = document.createElement("button");
@@ -158,9 +207,8 @@
             }
         }
         
-        // Universal Filter Function
+        // Filter logic jab user Tree dots me se kisi button par click karega
         window.setFilter = (filterType, value) => {
-            // Reset sab kuch pehle, taaki exact wahi post dikhe jo select ki hai
             currentCategory = "all";
             currentGenre = "all";
             currentLetter = "all";
@@ -172,10 +220,10 @@
             if(filterType === 'letter') currentLetter = value;
 
             applyFilter();
-            closeNav(); // Sidebar automatically close ho jayega select karne par
+            closeNav(); // Click karte hi sidebar automatically close ho jayega
         }
 
-        // Show All Function
+        // Home Reset button logic
         window.resetAllFilters = () => {
             currentCategory = "all";
             currentGenre = "all";
@@ -188,20 +236,15 @@
 
         function applyFilter() {
             let filtered = allAnime.filter(a => {
-                // 1. Search Box
                 const nameMatch = (a.name || "").toLowerCase().includes(currentSearch.toLowerCase());
-                
-                // 2. Category Match
                 const catMatch = currentCategory === "all" || (a.type || "").toLowerCase() === currentCategory.toLowerCase();
                 
-                // 3. Genre Match (Check in comma separated string)
                 let genreMatch = true;
                 if(currentGenre !== "all") {
                     let postGenres = (a.genre || "").toLowerCase();
                     genreMatch = postGenres.includes(currentGenre.toLowerCase());
                 }
 
-                // 4. Letter Match
                 let letterMatch = true;
                 if(currentLetter !== "all") {
                     letterMatch = (a.name || "").toUpperCase().startsWith(currentLetter);
@@ -215,7 +258,7 @@
         function render(list) {
             let box = document.getElementById("animeList");
             box.innerHTML = ""; 
-            if (list.length === 0) return box.innerHTML = "<h3 style='width:100%;text-align:center;color:#aaa;'>No Content Found</h3>";
+            if (list.length === 0) return box.innerHTML = "<h3 style='width:100%;text-align:center;color:#aaa;margin-top:50px;'>No Content Found 😢</h3>";
 
             list.forEach(a => {
                 let card = document.createElement("div");
@@ -232,7 +275,7 @@
             });
         }
 
-        // Search Input Event
+        // Search bar typing logic
         document.getElementById("searchInput").addEventListener("input", e => { 
             currentSearch = e.target.value.trim(); 
             applyFilter(); 
